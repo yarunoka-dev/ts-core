@@ -74,6 +74,28 @@ describe('resolver evaluation', () => {
     }
   });
 
+  it('resolves names that collide with Object.prototype members', () => {
+    // "constructor" and "toString" are legal names; membership must read
+    // own properties only, never the prototype chain.
+    const d = parse(
+      {
+        version: '1.0',
+        timezone: 'Asia/Tokyo',
+        resolvers: ['constructor'],
+        calendar: { date_sets: { toString: ['2026-08-06'] } },
+        schedules: [
+          { days: ['constructor'], allday: true },
+          { days: ['toString'], allday: true },
+        ],
+      },
+      { resolvers: { constructor: () => ['2026-08-05'] } },
+    );
+
+    assert.equal(matches(d, d.schedules[0]!, '2026-08-05T12:00:00+09:00'), true);
+    assert.equal(matches(d, d.schedules[0]!, '2026-08-06T12:00:00+09:00'), false);
+    assert.equal(matches(d, d.schedules[1]!, '2026-08-06T12:00:00+09:00'), true);
+  });
+
   it('backs calendar definitions by name', () => {
     const d = parse(
       {

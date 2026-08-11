@@ -62,7 +62,9 @@ export function createResolvedCalendar(
    * left to the binding the host supplies.
    */
   function named(name: string, day: Temporal.PlainDate): Set<string> {
-    const entry = calendar.dateSets[name];
+    // Own properties only: names such as "constructor" are legal, and a
+    // bare index read would pick them off Object.prototype.
+    const entry = Object.hasOwn(calendar.dateSets, name) ? calendar.dateSets[name] : undefined;
 
     if (entry !== undefined) {
       return setOfLiterals(name, entry);
@@ -151,7 +153,7 @@ export function createResolvedCalendar(
       dateSet('business_days', calendar.businessDays, day).has(day.toString()),
 
     nameContains(name, day) {
-      if (calendar.dateSets[name] === undefined && !bindings.has(name)) {
+      if (!Object.hasOwn(calendar.dateSets, name) && !bindings.has(name)) {
         throw new YrnkError('undefined-name', `Undefined name: ${name}`);
       }
 

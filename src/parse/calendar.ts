@@ -181,7 +181,7 @@ function parseDateSets(raw: unknown): Readonly<Record<string, readonly string[]>
     invalid('date_sets must be an object of name to date list');
   }
 
-  const dateSets: Record<string, readonly string[]> = {};
+  const entries: [string, readonly string[]][] = [];
 
   for (const [name, value] of Object.entries(raw)) {
     ensureUsableName(name);
@@ -190,8 +190,11 @@ function parseDateSets(raw: unknown): Readonly<Record<string, readonly string[]>
       invalid(`date_sets.${name} must be a date list (a name cannot stand for another name)`);
     }
 
-    dateSets[name] = parseDateList(value, `date_sets.${name}`);
+    entries.push([name, parseDateList(value, `date_sets.${name}`)]);
   }
 
-  return dateSets;
+  // Built through Object.fromEntries, which defines own properties: a
+  // plain assignment would send the legal name "__proto__" through the
+  // prototype setter instead of creating an entry.
+  return Object.fromEntries(entries);
 }

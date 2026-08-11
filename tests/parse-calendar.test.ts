@@ -180,6 +180,22 @@ describe('date_sets', () => {
     rejects({ ...base, calendar: { date_sets: { '2026-01-01': [] } } }, 'reserved-name');
   });
 
+  it('keeps __proto__ an ordinary entry rather than a prototype write', () => {
+    // Through JSON, as a real document arrives — a JS object literal
+    // would itself send __proto__ to the prototype slot.
+    const doc = parse(
+      '{"version":"1.0","timezone":"Asia/Tokyo","calendar":{"date_sets":{"__proto__":["2026-10-01"]}},"schedules":[{"days":["__proto__"],"allday":true}]}',
+    );
+
+    assert.ok(Object.hasOwn(doc.calendar.dateSets, '__proto__'));
+    // Read as an own property: an index or dot read would go through the
+    // deprecated accessor this test exists to avoid.
+    assert.deepEqual(Object.getOwnPropertyDescriptor(doc.calendar.dateSets, '__proto__')?.value, [
+      '2026-10-01',
+    ]);
+    assert.equal(Object.getPrototypeOf(doc.calendar.dateSets), Object.prototype);
+  });
+
   it('rejects values that are not date lists (a name cannot stand for another name)', () => {
     rejects({ ...base, calendar: { date_sets: { alias: 'other-name' } } }, 'invalid-document');
     rejects({ ...base, calendar: { date_sets: { alias: null } } }, 'invalid-document');
