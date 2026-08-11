@@ -264,6 +264,8 @@ describe('times', () => {
 
   it('caps the grid count at one day per unit', () => {
     parse({ ...base, schedules: [{ times: { every: [24, 'hour'] } }] });
+    parse({ ...base, schedules: [{ times: { every: [1440, 'minute'] } }] });
+    parse({ ...base, schedules: [{ times: { every: [86400, 'second'] } }] });
     rejects({ times: { every: [25, 'hour'] } }, 'invalid-document');
     rejects({ times: { every: [1441, 'minute'] } }, 'invalid-document');
     rejects({ times: { every: [86401, 'second'] } }, 'invalid-document');

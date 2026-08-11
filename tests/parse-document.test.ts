@@ -146,7 +146,10 @@ describe('resolvers declarations', () => {
   it('rejects reserved words and duplicates as declared names', () => {
     assert.throws(
       () => parse({ ...minimal, resolvers: ['holiday'] }, { resolvers: { holiday: resolver } }),
-      (error: unknown) => error instanceof YrnkError,
+      // The binding names are validated before the document's own
+      // declaration list is read, so the reserved word surfaces as a bad
+      // argument rather than a document error.
+      (error: unknown) => error instanceof YrnkError && error.code === 'invalid-value',
     );
     rejects({ ...minimal, resolvers: ['a-name', 'a-name'] }, 'invalid-document');
   });
