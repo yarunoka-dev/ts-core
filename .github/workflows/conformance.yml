@@ -1,0 +1,52 @@
+# The release gate against the spec's conformance kit. Runs on every
+# push to main rather than per PR: conformance is a claim about a
+# release, and the tag ruleset requires this check to pass on the commit
+# a tag points at — running on main gives every commit a tag could point
+# at its verdict with nothing to remember to dispatch, and a release
+# without a green run on its commit is rejected at the push. Dispatch
+# stays for ad-hoc runs.
+name: conformance
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    env:
+      # The kit version conformance is claimed against. go install builds
+      # it from source and verifies it against Go's checksum database.
+      KIT_VERSION: v1.0.2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The floor of the supported range — the claim is made in the
+      # weakest environment it covers. Node-version variance is the
+      # per-PR unit suite's business. No npm install: the package has no
+      # runtime dependencies, and Node executes the TypeScript sources
+      # directly through type stripping.
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          # There is no go.sum here for the dependency cache to key on
+          cache: false
+
+      - name: Install the conformance kit
+        run: go install "github.com/yarunoka-dev/test/cmd/yarunoka-test@${KIT_VERSION}"
+
+      - name: Run the conformance suite (eval and emit)
+        run: '"$(go env GOPATH)/bin/yarunoka-test" all node tests/conformance/adapter.ts'

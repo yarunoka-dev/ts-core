@@ -1,0 +1,45 @@
+{
+  "name": "@yarunoka/core",
+  "version": "0.1.0",
+  "description": "Yarunoka schedule definition DSL — core parser and builder for TypeScript",
+  "keywords": [
+    "yarunoka",
+    "schedule",
+    "dsl",
+    "calendar",
+    "recurrence"
+  ],
+  "homepage": "https://github.com/yarunoka-dev/ts-core",
+  "bugs": "https://github.com/yarunoka-dev/ts-core/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yarunoka-dev/ts-core.git"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "format": "biome check --write .",
+    "lint": "biome ci .",
+    "prepack": "npm run build",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  }
+}
