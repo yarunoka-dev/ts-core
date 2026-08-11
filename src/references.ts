@@ -1,5 +1,11 @@
 import { YrnkError } from './error.ts';
-import type { YrnkCalendar, YrnkCalendarWord, YrnkDayAtom, YrnkResolver, YrnkSchedule } from './model.ts';
+import type {
+  YrnkCalendar,
+  YrnkCalendarWord,
+  YrnkDayAtom,
+  YrnkResolver,
+  YrnkSchedule,
+} from './model.ts';
 
 /**
  * Checks schedules against the definitions and validates that every
@@ -23,17 +29,23 @@ export function ensureReferencesResolvable(
     }
 
     if (
-      schedule.time.kind === 'grid'
-      && schedule.time.between === 'business_hour'
-      && calendar.businessHours === undefined
+      schedule.time.kind === 'grid' &&
+      schedule.time.between === 'business_hour' &&
+      calendar.businessHours === undefined
     ) {
-      throw new YrnkError('missing-calendar-data', 'Using business_hour requires the business_hours definition');
+      throw new YrnkError(
+        'missing-calendar-data',
+        'Using business_hour requires the business_hours definition',
+      );
     }
   }
 
   for (const [context, name] of calendarNameReferences(calendar)) {
     if (!resolves(name, calendar, bindings)) {
-      throw new YrnkError('unregistered-resolver', `No resolver is bound to this name (${context}): ${name}`);
+      throw new YrnkError(
+        'unregistered-resolver',
+        `No resolver is bound to this name (${context}): ${name}`,
+      );
     }
   }
 }
@@ -66,13 +78,17 @@ export function* namesUsedIn(
  * of the two makes no difference to where the name may be written, so
  * both are consulted wherever one is checked.
  */
-function resolves(name: string, calendar: YrnkCalendar, bindings: ReadonlyMap<string, YrnkResolver>): boolean {
+function resolves(
+  name: string,
+  calendar: YrnkCalendar,
+  bindings: ReadonlyMap<string, YrnkResolver>,
+): boolean {
   return Object.hasOwn(calendar.dateSets, name) || bindings.has(name);
 }
 
 function ensureCalendarWordDefined(word: YrnkCalendarWord, calendar: YrnkCalendar): void {
-  const required: readonly (readonly [string, unknown])[]
-    = word === 'holiday'
+  const required: readonly (readonly [string, unknown])[] =
+    word === 'holiday'
       ? [['holidays', calendar.holidays]]
       : word === 'business_day' || word === 'business_holiday'
         ? [
@@ -85,9 +101,12 @@ function ensureCalendarWordDefined(word: YrnkCalendarWord, calendar: YrnkCalenda
   const missing = required.filter(([, definition]) => definition === undefined).map(([key]) => key);
 
   if (missing.length > 0) {
-    throw new YrnkError('missing-calendar-data', `Using ${word} requires the ${
-      missing.join(', ')
-    } definition (write an empty list if there are no such days)`);
+    throw new YrnkError(
+      'missing-calendar-data',
+      `Using ${word} requires the ${missing.join(
+        ', ',
+      )} definition (write an empty list if there are no such days)`,
+    );
   }
 }
 

@@ -2,9 +2,9 @@ import { bindingsOf } from './bindings.ts';
 import { YrnkError } from './error.ts';
 import { createFinder } from './eval/match-finder.ts';
 import { createResolvedCalendar } from './eval/resolved-calendar.ts';
+import type { YrnkDocument, YrnkOccurrence, YrnkSchedule } from './model.ts';
 import { ensureReferencesResolvable } from './references.ts';
 import { ensureTemporal } from './temporal.ts';
-import type { YrnkDocument, YrnkOccurrence, YrnkSchedule } from './model.ts';
 
 /**
  * An instant a query accepts: a Temporal value, a Date, or an ISO 8601
@@ -87,7 +87,12 @@ export function occurrencesIn(
   // Timed points are compared inclusively on whole seconds (ceil the
   // start, floor the end); an all-day occurrence overlaps the range from
   // the start's own second.
-  return finderFor(document).collectIn(schedule, ceilSec(fromNs), floorSec(fromNs), floorSec(throughNs));
+  return finderFor(document).collectIn(
+    schedule,
+    ceilSec(fromNs),
+    floorSec(fromNs),
+    floorSec(throughNs),
+  );
 }
 
 /**
@@ -101,7 +106,11 @@ export function occurrencesIn(
  */
 export function ensureResolvable(document: YrnkDocument, schedules?: Iterable<YrnkSchedule>): void {
   ensureTemporal();
-  ensureReferencesResolvable(schedules ?? document.schedules, document.calendar, bindingsOf(document));
+  ensureReferencesResolvable(
+    schedules ?? document.schedules,
+    document.calendar,
+    bindingsOf(document),
+  );
 }
 
 function finderFor(document: YrnkDocument) {
@@ -130,11 +139,17 @@ function toEpochNs(input: YrnkInstant, what: string): bigint {
     try {
       return Temporal.Instant.from(input).epochNanoseconds;
     } catch {
-      throw new YrnkError('invalid-value', `${what} must be an ISO 8601 instant with a UTC offset: ${input}`);
+      throw new YrnkError(
+        'invalid-value',
+        `${what} must be an ISO 8601 instant with a UTC offset: ${input}`,
+      );
     }
   }
 
-  throw new YrnkError('invalid-value', `${what} must be a Temporal.Instant, Temporal.ZonedDateTime, Date, or ISO 8601 string`);
+  throw new YrnkError(
+    'invalid-value',
+    `${what} must be a Temporal.Instant, Temporal.ZonedDateTime, Date, or ISO 8601 string`,
+  );
 }
 
 const NS_PER_SEC = 1_000_000_000n;

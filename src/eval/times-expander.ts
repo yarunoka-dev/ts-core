@@ -1,6 +1,6 @@
+import type { YrnkTimeSpec, YrnkTimeUnit } from '../model.ts';
 import { timeToSeconds } from '../parse/times.ts';
 import type { ResolvedCalendar } from './resolved-calendar.ts';
-import type { YrnkTimeSpec, YrnkTimeUnit } from '../model.ts';
 
 const UNIT_SECONDS: Readonly<Record<YrnkTimeUnit, number>> = { hour: 3600, minute: 60, second: 1 };
 
@@ -21,12 +21,17 @@ export function secondsOf(
 
   const [amount, unit] = time.every;
   const step = amount * UNIT_SECONDS[unit];
-  const windows: readonly (readonly [number, number])[]
-    = time.between === null
+  const windows: readonly (readonly [number, number])[] =
+    time.between === null
       ? [[0, 86400]]
       : time.between === 'business_hour'
         ? resolved.businessHourWindows()
-        : [[timeToSeconds(time.between[0]), time.between[1] === '24:00' ? 86400 : timeToSeconds(time.between[1])]];
+        : [
+            [
+              timeToSeconds(time.between[0]),
+              time.between[1] === '24:00' ? 86400 : timeToSeconds(time.between[1]),
+            ],
+          ];
   const points: number[] = [];
 
   for (const [start, end] of windows) {

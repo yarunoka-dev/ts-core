@@ -1,8 +1,8 @@
 import { YrnkError } from '../error.ts';
+import type { YrnkCalendar, YrnkDateSet, YrnkResolver } from '../model.ts';
+import { timeToSeconds } from '../parse/times.ts';
 import { dateLiteralProblem } from '../temporal.ts';
 import { denote } from './days.ts';
-import { timeToSeconds } from '../parse/times.ts';
-import type { YrnkCalendar, YrnkDateSet, YrnkResolver } from '../model.ts';
 
 /**
  * Resolution of the definitions for one question. A resolver is asked
@@ -40,7 +40,9 @@ export function createResolvedCalendar(
 
     // Literals are denoted onto the document's clock, so a date a zone
     // skipped reads as the day the occurrence would stand on.
-    const set = new Set(literals.map((date) => denote(Temporal.PlainDate.from(date), timezone).toString()));
+    const set = new Set(
+      literals.map((date) => denote(Temporal.PlainDate.from(date), timezone).toString()),
+    );
 
     upsert(key, 'all', set);
 
@@ -97,7 +99,10 @@ export function createResolvedCalendar(
    */
   function answeredSetOf(answered: unknown, name: string): Set<string> {
     if (!Array.isArray(answered)) {
-      throw new YrnkError('invalid-calendar-data', `${name}: the resolver must return a list of date strings`);
+      throw new YrnkError(
+        'invalid-calendar-data',
+        `${name}: the resolver must return a list of date strings`,
+      );
     }
 
     const set = new Set<string>();
@@ -120,7 +125,11 @@ export function createResolvedCalendar(
   }
 
   /** The set to consult for this day, for a built-in definition. */
-  function dateSet(key: string, definition: YrnkDateSet | undefined, day: Temporal.PlainDate): Set<string> {
+  function dateSet(
+    key: string,
+    definition: YrnkDateSet | undefined,
+    day: Temporal.PlainDate,
+  ): Set<string> {
     if (definition === undefined) {
       // A safeguard: the reference validation should have rejected this
       // already.
@@ -136,8 +145,10 @@ export function createResolvedCalendar(
 
   return {
     holidayContains: (day) => dateSet('holidays', calendar.holidays, day).has(day.toString()),
-    businessHolidayContains: (day) => dateSet('business_holidays', calendar.businessHolidays, day).has(day.toString()),
-    businessDayContains: (day) => dateSet('business_days', calendar.businessDays, day).has(day.toString()),
+    businessHolidayContains: (day) =>
+      dateSet('business_holidays', calendar.businessHolidays, day).has(day.toString()),
+    businessDayContains: (day) =>
+      dateSet('business_days', calendar.businessDays, day).has(day.toString()),
 
     nameContains(name, day) {
       if (calendar.dateSets[name] === undefined && !bindings.has(name)) {
@@ -150,7 +161,15 @@ export function createResolvedCalendar(
     isInWorkweek(isoDayOfWeek) {
       if (workweekSet === null) {
         const names = calendar.workweek ?? ['mon', 'tue', 'wed', 'thu', 'fri'];
-        const iso: Readonly<Record<string, number>> = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 7 };
+        const iso: Readonly<Record<string, number>> = {
+          mon: 1,
+          tue: 2,
+          wed: 3,
+          thu: 4,
+          fri: 5,
+          sat: 6,
+          sun: 7,
+        };
 
         workweekSet = new Set(names.map((name) => iso[name] ?? 0));
       }
@@ -160,13 +179,19 @@ export function createResolvedCalendar(
 
     businessHourWindows() {
       if (calendar.businessHours === undefined) {
-        throw new YrnkError('missing-calendar-data', 'Using business_hour requires the business_hours definition');
+        throw new YrnkError(
+          'missing-calendar-data',
+          'Using business_hour requires the business_hours definition',
+        );
       }
 
-      return calendar.businessHours.map((window) => [
-        timeToSeconds(window[0]),
-        window[1] === '24:00' ? 86400 : timeToSeconds(window[1]),
-      ] as const);
+      return calendar.businessHours.map(
+        (window) =>
+          [
+            timeToSeconds(window[0]),
+            window[1] === '24:00' ? 86400 : timeToSeconds(window[1]),
+          ] as const,
+      );
     },
   };
 }

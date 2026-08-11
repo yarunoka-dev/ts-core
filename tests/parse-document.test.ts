@@ -4,9 +4,8 @@
 // name, and the completeness of what the document declares.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-
-import { parse } from '../src/index.ts';
 import { YrnkError } from '../src/error.ts';
+import { parse } from '../src/index.ts';
 
 const minimal = {
   version: '1.0',
@@ -108,13 +107,17 @@ describe('schedules', () => {
   });
 
   it('rejects duplicate schedules regardless of member order', () => {
-    rejects({
-      ...minimal,
-      schedules: [
-        { days: [25], times: ['10:00'] },
-        { times: ['10:00'], days: [25] },
-      ],
-    }, 'invalid-document', /[Dd]uplicate/);
+    rejects(
+      {
+        ...minimal,
+        schedules: [
+          { days: [25], times: ['10:00'] },
+          { times: ['10:00'], days: [25] },
+        ],
+      },
+      'invalid-document',
+      /[Dd]uplicate/,
+    );
   });
 });
 
@@ -122,11 +125,14 @@ describe('resolvers declarations', () => {
   const resolver = () => ['2026-08-05'];
 
   it('parses declared names bound by the host', () => {
-    const doc = parse({
-      ...minimal,
-      resolvers: ['closures'],
-      schedules: [{ days: ['closures'], times: ['10:00'] }],
-    }, { resolvers: { closures: resolver } });
+    const doc = parse(
+      {
+        ...minimal,
+        resolvers: ['closures'],
+        schedules: [{ days: ['closures'], times: ['10:00'] }],
+      },
+      { resolvers: { closures: resolver } },
+    );
 
     assert.deepEqual(doc.resolvers, ['closures']);
   });
@@ -147,31 +153,44 @@ describe('resolvers declarations', () => {
 
   it('rejects a name that is both defined and declared', () => {
     assert.throws(
-      () => parse({
-        ...minimal,
-        resolvers: ['founding-day'],
-        calendar: { date_sets: { 'founding-day': ['2026-10-01'] } },
-      }, { resolvers: { 'founding-day': resolver } }),
+      () =>
+        parse(
+          {
+            ...minimal,
+            resolvers: ['founding-day'],
+            calendar: { date_sets: { 'founding-day': ['2026-10-01'] } },
+          },
+          { resolvers: { 'founding-day': resolver } },
+        ),
       (error: unknown) => error instanceof YrnkError && error.code === 'invalid-document',
     );
   });
 
   it('rejects a used name that is neither defined nor declared', () => {
-    rejects({
-      ...minimal,
-      schedules: [{ days: ['closures'], times: ['10:00'] }],
-    }, 'undefined-name');
+    rejects(
+      {
+        ...minimal,
+        schedules: [{ days: ['closures'], times: ['10:00'] }],
+      },
+      'undefined-name',
+    );
   });
 
   it('rejects a declared name with no binding', () => {
-    rejects({
-      ...minimal,
-      resolvers: ['closures'],
-    }, 'unregistered-resolver');
+    rejects(
+      {
+        ...minimal,
+        resolvers: ['closures'],
+      },
+      'unregistered-resolver',
+    );
   });
 
   it('accepts a declared and bound name that no schedule uses', () => {
-    const doc = parse({ ...minimal, resolvers: ['closures'] }, { resolvers: { closures: resolver } });
+    const doc = parse(
+      { ...minimal, resolvers: ['closures'] },
+      { resolvers: { closures: resolver } },
+    );
 
     assert.deepEqual(doc.resolvers, ['closures']);
   });

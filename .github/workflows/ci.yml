@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies from lock file
         run: npm ci --ignore-scripts
 
+      - name: Check code style and lints
+        run: npm run lint
+
       - name: Build
         run: npm run build
 

@@ -29,7 +29,10 @@ describe('build', () => {
         business_holidays: ['2026-08-13', '2026-08-14'],
         business_days: [],
         workweek: ['tue', 'wed', 'thu', 'fri', 'sat'],
-        business_hours: [['09:00', '12:00'], ['13:00', '24:00']],
+        business_hours: [
+          ['09:00', '12:00'],
+          ['13:00', '24:00'],
+        ],
         date_sets: { 'founding-day': ['2026-10-01'], 'closing-day': [] },
       },
       schedules: [
@@ -77,14 +80,16 @@ describe('build', () => {
   });
 
   it('omits what the document omitted', () => {
-    const built = build(parse({
-      version: '1.0',
-      timezone: 'UTC',
-      schedules: [{ allday: true }],
-    }));
+    const built = build(
+      parse({
+        version: '1.0',
+        timezone: 'UTC',
+        schedules: [{ allday: true }],
+      }),
+    );
 
     assert.deepEqual(Object.keys(built), ['version', 'timezone', 'schedules']);
-    assert.deepEqual(built['schedules'], [{ allday: true }]);
+    assert.deepEqual(built.schedules, [{ allday: true }]);
   });
 
   it('emits an empty written date list as a list, never dropping it', () => {

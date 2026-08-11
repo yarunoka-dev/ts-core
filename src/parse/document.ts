@@ -1,10 +1,10 @@
-import { YrnkError } from '../error.ts';
 import { descriptionProblem, labelProblem } from '../annotations.ts';
-import { nameProblem } from '../names.ts';
 import { attachBindings } from '../bindings.ts';
+import { YrnkError } from '../error.ts';
+import type { YrnkDocument, YrnkResolver, YrnkSchedule } from '../model.ts';
+import { nameProblem } from '../names.ts';
 import { ensureReferencesResolvable, namesUsedIn } from '../references.ts';
 import { ensureTemporal, timezoneProblem } from '../temporal.ts';
-import type { YrnkDocument, YrnkResolver, YrnkSchedule } from '../model.ts';
 import { parseCalendar } from './calendar.ts';
 import { parseSchedule } from './schedule.ts';
 import { canonicalized, ensureKnownKeys, invalid, isPlainObject, typeOf } from './shared.ts';
@@ -12,7 +12,15 @@ import { canonicalized, ensureKnownKeys, invalid, isPlainObject, typeOf } from '
 /** The spec version this implementation reads. */
 export const SUPPORTED_VERSION = '1.0';
 
-const KNOWN_KEYS = ['version', 'timezone', 'resolvers', 'calendar', 'schedules', 'label', 'description'];
+const KNOWN_KEYS = [
+  'version',
+  'timezone',
+  'resolvers',
+  'calendar',
+  'schedules',
+  'label',
+  'description',
+];
 
 export type YrnkParseOptions = {
   /** What the host binds the document's declared resolver names to */
@@ -38,7 +46,7 @@ export function parse(input: string | unknown, options?: YrnkParseOptions): Yrnk
   const bindings = collectBindings(options?.resolvers);
   const version = parseVersion(raw);
   const timezone = parseTimezone(raw);
-  const calendar = parseCalendar(raw['calendar']);
+  const calendar = parseCalendar(raw.calendar);
   const schedules = parseSchedules(raw, timezone);
   const resolvers = parseResolverDeclarations(raw);
   const label = parseAnnotation(raw, 'label', labelProblem);
@@ -87,7 +95,9 @@ function decode(input: string | unknown): Record<string, unknown> {
  * The bindings, validated as names the moment they are handed over — a
  * name that can be bound is a name that can be written.
  */
-function collectBindings(resolvers: Readonly<Record<string, YrnkResolver>> | undefined): ReadonlyMap<string, YrnkResolver> {
+function collectBindings(
+  resolvers: Readonly<Record<string, YrnkResolver>> | undefined,
+): ReadonlyMap<string, YrnkResolver> {
   const bindings = new Map<string, YrnkResolver>();
 
   for (const [name, resolver] of Object.entries(resolvers ?? {})) {
@@ -108,7 +118,7 @@ function parseVersion(raw: Record<string, unknown>): string {
     invalid('version is required');
   }
 
-  const version = raw['version'];
+  const version = raw.version;
 
   if (typeof version !== 'string') {
     invalid('version must be an "x.y" string (e.g. "1.0")');
@@ -127,7 +137,7 @@ function parseVersion(raw: Record<string, unknown>): string {
 }
 
 function parseTimezone(raw: Record<string, unknown>): string {
-  const timezone = raw['timezone'];
+  const timezone = raw.timezone;
 
   if (typeof timezone !== 'string') {
     invalid('timezone is required (e.g. "Asia/Tokyo")');
@@ -147,7 +157,7 @@ function parseSchedules(raw: Record<string, unknown>, timezone: string): readonl
     invalid('schedules is required');
   }
 
-  const value = raw['schedules'];
+  const value = raw.schedules;
 
   if (!Array.isArray(value)) {
     invalid('schedules must be a list of schedules (a bare object cannot be written)');
@@ -180,7 +190,7 @@ function parseResolverDeclarations(raw: Record<string, unknown>): readonly strin
     return [];
   }
 
-  const value = raw['resolvers'];
+  const value = raw.resolvers;
 
   if (!Array.isArray(value)) {
     invalid('resolvers must be a list of names');
@@ -246,7 +256,10 @@ function parseAnnotation(
  * declared and defined at once. The bindings are checked whole, so a
  * host missing several learns all of them at once.
  */
-function ensureDeclarationsHold(document: YrnkDocument, bindings: ReadonlyMap<string, YrnkResolver>): void {
+function ensureDeclarationsHold(
+  document: YrnkDocument,
+  bindings: ReadonlyMap<string, YrnkResolver>,
+): void {
   const declared = new Set(document.resolvers);
 
   for (const name of Object.keys(document.calendar.dateSets)) {
@@ -267,7 +280,10 @@ function ensureDeclarationsHold(document: YrnkDocument, bindings: ReadonlyMap<st
   const unbound = document.resolvers.filter((name) => !bindings.has(name));
 
   if (unbound.length > 0) {
-    throw new YrnkError('unregistered-resolver', `No resolver is bound to these declared names: ${unbound.join(', ')}`);
+    throw new YrnkError(
+      'unregistered-resolver',
+      `No resolver is bound to these declared names: ${unbound.join(', ')}`,
+    );
   }
 }
 

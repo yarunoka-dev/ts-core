@@ -3,10 +3,9 @@
 // range — each parsed into its discriminated-union node.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-
-import { parse } from '../src/index.ts';
 import { YrnkError } from '../src/error.ts';
 import type { YrnkSchedule } from '../src/index.ts';
+import { parse } from '../src/index.ts';
 
 const base = {
   version: '1.0',
@@ -77,10 +76,13 @@ describe('date axes', () => {
 
 describe('day atoms', () => {
   it('parses each atom form into its node', () => {
-    const schedule = one({
-      days: [25, 'mon', ['3rd', 'fri'], 'last_day_of_month', 'business_day', 'founding-day'],
-      times: ['10:00'],
-    }, { holidays: [], business_holidays: [], business_days: [], date_sets: { 'founding-day': [] } });
+    const schedule = one(
+      {
+        days: [25, 'mon', ['3rd', 'fri'], 'last_day_of_month', 'business_day', 'founding-day'],
+        times: ['10:00'],
+      },
+      { holidays: [], business_holidays: [], business_days: [], date_sets: { 'founding-day': [] } },
+    );
 
     assert.deepEqual(schedule.days, [
       { kind: 'month-day', day: 25 },
@@ -93,7 +95,11 @@ describe('day atoms', () => {
   });
 
   it('parses the day cycle and requires from', () => {
-    const schedule = one({ from: '2026-07-14 00:00', days: [['every', 2, 'day']], times: ['03:00'] });
+    const schedule = one({
+      from: '2026-07-14 00:00',
+      days: [['every', 2, 'day']],
+      times: ['03:00'],
+    });
 
     assert.deepEqual(schedule.days, [{ kind: 'day-cycle', interval: 2 }]);
     rejects({ days: [['every', 2, 'day']], times: ['03:00'] }, 'invalid-document', /from/);
@@ -121,47 +127,78 @@ describe('day atoms', () => {
     rejects({ days: [['6th', 'mon']], times: ['10:00'] }, 'invalid-document');
     rejects({ days: [['3rd', 'monday']], times: ['10:00'] }, 'invalid-document');
     rejects({ days: [25, 25], times: ['10:00'] }, 'invalid-document', /[Dd]uplicate/);
-    rejects({ days: [['3rd', 'mon'], ['3rd', 'mon']], times: ['10:00'] }, 'invalid-document', /[Dd]uplicate/);
+    rejects(
+      {
+        days: [
+          ['3rd', 'mon'],
+          ['3rd', 'mon'],
+        ],
+        times: ['10:00'],
+      },
+      'invalid-document',
+      /[Dd]uplicate/,
+    );
   });
 });
 
 describe('shift', () => {
   it('parses both forms', () => {
-    assert.deepEqual(one({ days: [25], shift: ['prev', 'business_day'], times: ['10:00'] },
-      { holidays: [], business_holidays: [], business_days: [] }).shift, {
-      direction: 'prev',
-      orSame: false,
-      condition: { kind: 'calendar-word', word: 'business_day' },
-    });
-    assert.deepEqual(one({ days: [25], shift: ['next', 'or_same', 'mon'], times: ['10:00'] }).shift, {
-      direction: 'next',
-      orSame: true,
-      condition: { kind: 'weekday', day: 'mon' },
-    });
+    assert.deepEqual(
+      one(
+        { days: [25], shift: ['prev', 'business_day'], times: ['10:00'] },
+        { holidays: [], business_holidays: [], business_days: [] },
+      ).shift,
+      {
+        direction: 'prev',
+        orSame: false,
+        condition: { kind: 'calendar-word', word: 'business_day' },
+      },
+    );
+    assert.deepEqual(
+      one({ days: [25], shift: ['next', 'or_same', 'mon'], times: ['10:00'] }).shift,
+      {
+        direction: 'next',
+        orSame: true,
+        condition: { kind: 'weekday', day: 'mon' },
+      },
+    );
   });
 
   it('rejects malformed shifts', () => {
     rejects({ days: [25], shift: ['sideways', 'mon'], times: ['10:00'] }, 'invalid-document');
     rejects({ days: [25], shift: ['prev'], times: ['10:00'] }, 'invalid-document');
     rejects({ days: [25], shift: ['prev', 'almost', 'mon'], times: ['10:00'] }, 'invalid-document');
-    rejects({ days: [25], shift: ['prev', ['every', 2, 'day']], times: ['10:00'] }, 'invalid-document');
+    rejects(
+      { days: [25], shift: ['prev', ['every', 2, 'day']], times: ['10:00'] },
+      'invalid-document',
+    );
   });
 });
 
 describe('if', () => {
   it('parses the four forms', () => {
     assert.deepEqual(one({ days: [13], if: ['fri'], times: ['10:00'] }).if, {
-      direction: null, negated: false, condition: { kind: 'weekday', day: 'fri' },
+      direction: null,
+      negated: false,
+      condition: { kind: 'weekday', day: 'fri' },
     });
-    assert.deepEqual(one({ days: ['mon'], if: ['not', 'holiday'], times: ['10:00'] },
-      { holidays: [] }).if, {
-      direction: null, negated: true, condition: { kind: 'calendar-word', word: 'holiday' },
-    });
+    assert.deepEqual(
+      one({ days: ['mon'], if: ['not', 'holiday'], times: ['10:00'] }, { holidays: [] }).if,
+      {
+        direction: null,
+        negated: true,
+        condition: { kind: 'calendar-word', word: 'holiday' },
+      },
+    );
     assert.deepEqual(one({ if: ['next', 'last_day_of_month'], times: ['10:00'] }).if, {
-      direction: 'next', negated: false, condition: { kind: 'last-day-of-month' },
+      direction: 'next',
+      negated: false,
+      condition: { kind: 'last-day-of-month' },
     });
     assert.deepEqual(one({ days: ['mon'], if: ['prev', 'not', 'sun'], times: ['10:00'] }).if, {
-      direction: 'prev', negated: true, condition: { kind: 'weekday', day: 'sun' },
+      direction: 'prev',
+      negated: true,
+      condition: { kind: 'weekday', day: 'sun' },
     });
   });
 
@@ -202,12 +239,17 @@ describe('times', () => {
       every: [600, 'second'],
       between: null,
     });
-    assert.deepEqual(one({ times: { every: [1, 'hour'], between: 'business_hour' } },
-      { business_hours: [['09:00', '18:00']] }).time, {
-      kind: 'grid',
-      every: [1, 'hour'],
-      between: 'business_hour',
-    });
+    assert.deepEqual(
+      one(
+        { times: { every: [1, 'hour'], between: 'business_hour' } },
+        { business_hours: [['09:00', '18:00']] },
+      ).time,
+      {
+        kind: 'grid',
+        every: [1, 'hour'],
+        between: 'business_hour',
+      },
+    );
   });
 
   it('rejects malformed grids', () => {
@@ -243,7 +285,10 @@ describe('the interval every', () => {
   it('rejects the day unit and the date axes', () => {
     rejects({ from: '2026-07-14 00:00', every: [2, 'day'] }, 'invalid-document');
     rejects({ from: '2026-07-14 00:00', every: [1, 'hour'], days: ['mon'] }, 'invalid-document');
-    rejects({ from: '2026-07-14 00:00', every: [1, 'hour'], shift: ['prev', 'mon'] }, 'invalid-document');
+    rejects(
+      { from: '2026-07-14 00:00', every: [1, 'hour'], shift: ['prev', 'mon'] },
+      'invalid-document',
+    );
   });
 });
 
@@ -266,8 +311,14 @@ describe('from / until', () => {
   });
 
   it('requires from earlier than until as instants', () => {
-    rejects({ from: '2026-07-01 10:00', until: '2026-07-01 10:00', times: ['09:00'] }, 'invalid-document');
-    rejects({ from: '2026-07-02 00:00', until: '2026-07-01 00:00', times: ['09:00'] }, 'invalid-document');
+    rejects(
+      { from: '2026-07-01 10:00', until: '2026-07-01 10:00', times: ['09:00'] },
+      'invalid-document',
+    );
+    rejects(
+      { from: '2026-07-02 00:00', until: '2026-07-01 00:00', times: ['09:00'] },
+      'invalid-document',
+    );
   });
 });
 

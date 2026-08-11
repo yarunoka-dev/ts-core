@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { labelProblem, descriptionProblem } from '../src/annotations.ts';
+import { descriptionProblem, labelProblem } from '../src/annotations.ts';
 
 describe('labelProblem', () => {
   it('accepts an ordinary line', () => {

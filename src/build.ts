@@ -20,29 +20,29 @@ export function build(document: YrnkDocument): Record<string, unknown> {
   // Annotations lead: a labeled document tells the reader what it is
   // before how to read it.
   if (document.label !== undefined) {
-    raw['label'] = document.label;
+    raw.label = document.label;
   }
 
   if (document.description !== undefined) {
-    raw['description'] = document.description;
+    raw.description = document.description;
   }
 
-  raw['version'] = document.version;
-  raw['timezone'] = document.timezone;
+  raw.version = document.version;
+  raw.timezone = document.timezone;
 
   // A document that leaves nothing to its host omits the key rather than
   // writing an empty list.
   if (document.resolvers.length > 0) {
-    raw['resolvers'] = [...document.resolvers];
+    raw.resolvers = [...document.resolvers];
   }
 
   const calendar = buildCalendar(document.calendar);
 
   if (Object.keys(calendar).length > 0) {
-    raw['calendar'] = calendar;
+    raw.calendar = calendar;
   }
 
-  raw['schedules'] = document.schedules.map(buildSchedule);
+  raw.schedules = document.schedules.map(buildSchedule);
 
   return raw;
 }
@@ -64,15 +64,15 @@ function buildCalendar(calendar: YrnkCalendar): Raw {
   }
 
   if (calendar.workweek !== undefined) {
-    raw['workweek'] = [...calendar.workweek];
+    raw.workweek = [...calendar.workweek];
   }
 
   if (calendar.businessHours !== undefined) {
-    raw['business_hours'] = calendar.businessHours.map((window) => [...window]);
+    raw.business_hours = calendar.businessHours.map((window) => [...window]);
   }
 
   if (Object.keys(calendar.dateSets).length > 0) {
-    raw['date_sets'] = Object.fromEntries(
+    raw.date_sets = Object.fromEntries(
       Object.entries(calendar.dateSets).map(([name, dates]) => [name, [...dates]]),
     );
   }
@@ -84,43 +84,43 @@ function buildSchedule(schedule: YrnkSchedule): Raw {
   const raw: Raw = {};
 
   if (schedule.label !== undefined) {
-    raw['label'] = schedule.label;
+    raw.label = schedule.label;
   }
 
   if (schedule.description !== undefined) {
-    raw['description'] = schedule.description;
+    raw.description = schedule.description;
   }
 
   if (schedule.from !== undefined) {
-    raw['from'] = schedule.from;
+    raw.from = schedule.from;
   }
 
   if (schedule.until !== undefined) {
-    raw['until'] = schedule.until;
+    raw.until = schedule.until;
   }
 
   if (schedule.years !== undefined) {
-    raw['years'] = [...schedule.years];
+    raw.years = [...schedule.years];
   }
 
   if (schedule.months !== undefined) {
-    raw['months'] = [...schedule.months];
+    raw.months = [...schedule.months];
   }
 
   if (schedule.days !== undefined) {
-    raw['days'] = schedule.days.map(buildAtom);
+    raw.days = schedule.days.map(buildAtom);
   }
 
   if (schedule.shift !== undefined) {
     const condition = buildAtom(schedule.shift.condition);
 
-    raw['shift'] = schedule.shift.orSame
+    raw.shift = schedule.shift.orSame
       ? [schedule.shift.direction, 'or_same', condition]
       : [schedule.shift.direction, condition];
   }
 
   if (schedule.if !== undefined) {
-    raw['if'] = [
+    raw.if = [
       ...(schedule.if.direction !== null ? [schedule.if.direction] : []),
       ...(schedule.if.negated ? ['not'] : []),
       buildAtom(schedule.if.condition),

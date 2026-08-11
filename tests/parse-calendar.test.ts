@@ -3,9 +3,8 @@
 // business_hours windows, and the open date_sets namespace.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-
-import { parse } from '../src/index.ts';
 import { YrnkError } from '../src/error.ts';
+import { parse } from '../src/index.ts';
 
 const base = {
   version: '1.0',
@@ -108,9 +107,20 @@ describe('workweek', () => {
 
 describe('business_hours', () => {
   it('parses window pairs and keeps 24:00 as an end', () => {
-    const doc = parse({ ...base, calendar: { business_hours: [['09:00', '12:00'], ['13:00', '24:00']] } });
+    const doc = parse({
+      ...base,
+      calendar: {
+        business_hours: [
+          ['09:00', '12:00'],
+          ['13:00', '24:00'],
+        ],
+      },
+    });
 
-    assert.deepEqual(doc.calendar.businessHours, [['09:00', '12:00'], ['13:00', '24:00']]);
+    assert.deepEqual(doc.calendar.businessHours, [
+      ['09:00', '12:00'],
+      ['13:00', '24:00'],
+    ]);
   });
 
   it('rejects start >= end and 24:00 as a start', () => {
@@ -120,8 +130,27 @@ describe('business_hours', () => {
   });
 
   it('rejects overlapping windows but allows touching ones', () => {
-    rejects({ ...base, calendar: { business_hours: [['09:00', '12:00'], ['11:00', '13:00']] } }, 'invalid-document');
-    parse({ ...base, calendar: { business_hours: [['09:00', '12:00'], ['12:00', '13:00']] } });
+    rejects(
+      {
+        ...base,
+        calendar: {
+          business_hours: [
+            ['09:00', '12:00'],
+            ['11:00', '13:00'],
+          ],
+        },
+      },
+      'invalid-document',
+    );
+    parse({
+      ...base,
+      calendar: {
+        business_hours: [
+          ['09:00', '12:00'],
+          ['12:00', '13:00'],
+        ],
+      },
+    });
   });
 
   it('rejects malformed windows and empties', () => {
@@ -159,16 +188,26 @@ describe('date_sets', () => {
 
 describe('calendar vocabulary requirements', () => {
   it('requires holidays for the holiday word', () => {
-    rejects({ ...base, schedules: [{ days: ['holiday'], times: ['10:00'] }] }, 'missing-calendar-data');
-    parse({ ...base, calendar: { holidays: [] }, schedules: [{ days: ['holiday'], times: ['10:00'] }] });
+    rejects(
+      { ...base, schedules: [{ days: ['holiday'], times: ['10:00'] }] },
+      'missing-calendar-data',
+    );
+    parse({
+      ...base,
+      calendar: { holidays: [] },
+      schedules: [{ days: ['holiday'], times: ['10:00'] }],
+    });
   });
 
   it('requires all three layers for the business words', () => {
-    rejects({
-      ...base,
-      calendar: { holidays: [], business_holidays: [] },
-      schedules: [{ days: ['business_day'], times: ['10:00'] }],
-    }, 'missing-calendar-data');
+    rejects(
+      {
+        ...base,
+        calendar: { holidays: [], business_holidays: [] },
+        schedules: [{ days: ['business_day'], times: ['10:00'] }],
+      },
+      'missing-calendar-data',
+    );
     parse({
       ...base,
       calendar: { holidays: [], business_holidays: [], business_days: [] },
@@ -182,9 +221,12 @@ describe('calendar vocabulary requirements', () => {
   });
 
   it('requires business_hours for between business_hour', () => {
-    rejects({
-      ...base,
-      schedules: [{ times: { every: [1, 'hour'], between: 'business_hour' } }],
-    }, 'missing-calendar-data');
+    rejects(
+      {
+        ...base,
+        schedules: [{ times: { every: [1, 'hour'], between: 'business_hour' } }],
+      },
+      'missing-calendar-data',
+    );
   });
 });

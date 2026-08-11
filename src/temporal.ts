@@ -7,8 +7,8 @@
 export function ensureTemporal(): void {
   if (typeof globalThis.Temporal === 'undefined') {
     throw new Error(
-      '@yarunoka/core requires the Temporal API (ES2026). Use Node.js 26+ or a browser that ships '
-        + "Temporal, or install a polyfill in your application: import 'temporal-polyfill/global'",
+      '@yarunoka/core requires the Temporal API (ES2026). Use Node.js 26+ or a browser that ships ' +
+        "Temporal, or install a polyfill in your application: import 'temporal-polyfill/global'",
     );
   }
 }
@@ -82,6 +82,9 @@ export function isRealDate(year: number, month: number, day: number): boolean {
  * the gap, and a wall time that occurs twice (the fall-back overlap)
  * counts as its first occurrence.
  */
-export function resolveWall(dateTime: Temporal.PlainDateTime, timezone: string): Temporal.ZonedDateTime {
+export function resolveWall(
+  dateTime: Temporal.PlainDateTime,
+  timezone: string,
+): Temporal.ZonedDateTime {
   return dateTime.toZonedDateTime(timezone, { disambiguation: 'compatible' });
 }

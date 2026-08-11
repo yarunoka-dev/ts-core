@@ -1,4 +1,3 @@
-import { ensureUsableName } from '../names.ts';
 import type {
   YrnkCalendarWord,
   YrnkDayAtom,
@@ -9,11 +8,18 @@ import type {
   YrnkOrdinal,
   YrnkShift,
 } from '../model.ts';
+import { ensureUsableName } from '../names.ts';
 import { invalid, typeOf } from './shared.ts';
 
 const DAY_NAMES: readonly string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const ORDINALS: readonly string[] = ['1st', '2nd', '3rd', '4th', '5th', 'last'];
-const CALENDAR_WORDS: readonly string[] = ['weekday', 'weekend', 'holiday', 'business_day', 'business_holiday'];
+const CALENDAR_WORDS: readonly string[] = [
+  'weekday',
+  'weekend',
+  'holiday',
+  'business_day',
+  'business_holiday',
+];
 /** Structural words of shift / if. Their appearance in an atom position gets a dedicated error. */
 const MODIFIER_WORDS: readonly string[] = ['not', 'prev', 'next', 'or_same'];
 
@@ -28,8 +34,9 @@ export function parseDayExpression(raw: unknown): readonly YrnkDayAtom[] {
     invalid('days must be a non-empty list of atoms (a scalar cannot be written)');
   }
 
-  const atoms = raw.map((atom): YrnkDayAtom =>
-    Array.isArray(atom) && atom[0] === 'every' ? parseDayCycle(atom) : parseDayCondition(atom),
+  const atoms = raw.map(
+    (atom): YrnkDayAtom =>
+      Array.isArray(atom) && atom[0] === 'every' ? parseDayCycle(atom) : parseDayCondition(atom),
   );
 
   // Compare the whole structure of the atom, as JSON Schema's
@@ -92,11 +99,15 @@ function parseWord(word: string): YrnkDayCondition {
   }
 
   if (ORDINALS.includes(word)) {
-    invalid(`An ordinal word is usable only inside a tuple: write "${word}" as [["${word}", "mon"]]`);
+    invalid(
+      `An ordinal word is usable only inside a tuple: write "${word}" as [["${word}", "mon"]]`,
+    );
   }
 
   if (MODIFIER_WORDS.includes(word)) {
-    invalid(`"${word}" is not usable as a day expression atom (it is a structural word of shift / if)`);
+    invalid(
+      `"${word}" is not usable as a day expression atom (it is a structural word of shift / if)`,
+    );
   }
 
   if (word === 'business_hour') {
@@ -104,7 +115,9 @@ function parseWord(word: string): YrnkDayCondition {
   }
 
   if (/^(\d+|\d{4}-\d{2}-\d{2}|\d{2}:\d{2})$/.test(word)) {
-    invalid(`A literal shape cannot be written directly in days: ${word} (give the dates a name under date_sets and refer to it)`);
+    invalid(
+      `A literal shape cannot be written directly in days: ${word} (give the dates a name under date_sets and refer to it)`,
+    );
   }
 
   // Whatever is left is a name, and it is held to what every name is
@@ -147,11 +160,15 @@ function parseDayCycle(raw: readonly unknown[]): YrnkDayAtom {
   const [, amount, unit] = raw;
 
   if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 1) {
-    invalid(`Count of every must be an integer of at least 1: ${typeOf(amount) === 'number' ? amount : typeOf(amount)}`);
+    invalid(
+      `Count of every must be an integer of at least 1: ${typeOf(amount) === 'number' ? amount : typeOf(amount)}`,
+    );
   }
 
   if (unit !== 'day') {
-    invalid(`The unit of the date-axis every is "day" (singular) only: ${typeof unit === 'string' ? unit : typeOf(unit)}`);
+    invalid(
+      `The unit of the date-axis every is "day" (singular) only: ${typeof unit === 'string' ? unit : typeOf(unit)}`,
+    );
   }
 
   return { kind: 'day-cycle', interval: amount as number };
@@ -159,7 +176,9 @@ function parseDayCycle(raw: readonly unknown[]): YrnkDayAtom {
 
 export function parseShift(raw: unknown): YrnkShift {
   if (!Array.isArray(raw) || raw.length < 2 || raw.length > 3) {
-    invalid('shift must be [direction, landing condition] or [direction, "or_same", landing condition]');
+    invalid(
+      'shift must be [direction, landing condition] or [direction, "or_same", landing condition]',
+    );
   }
 
   if (raw[0] !== 'prev' && raw[0] !== 'next') {

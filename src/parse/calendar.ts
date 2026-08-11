@@ -1,10 +1,17 @@
+import type { YrnkCalendar, YrnkDateSet, YrnkDayName } from '../model.ts';
 import { ensureUsableName } from '../names.ts';
 import { dateLiteralProblem } from '../temporal.ts';
-import type { YrnkCalendar, YrnkDateSet, YrnkDayName } from '../model.ts';
-import { parseWindow, timeToSeconds } from './times.ts';
 import { ensureKnownKeys, invalid, isPlainObject } from './shared.ts';
+import { parseWindow, timeToSeconds } from './times.ts';
 
-const KNOWN_KEYS = ['holidays', 'business_holidays', 'business_days', 'workweek', 'business_hours', 'date_sets'];
+const KNOWN_KEYS = [
+  'holidays',
+  'business_holidays',
+  'business_days',
+  'workweek',
+  'business_hours',
+  'date_sets',
+];
 
 const DAY_NAMES: readonly string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
@@ -26,9 +33,11 @@ export function parseCalendar(raw: unknown): YrnkCalendar {
   const holidays = parseDateSetPosition(raw, 'holidays');
   const businessHolidays = parseDateSetPosition(raw, 'business_holidays');
   const businessDays = parseDateSetPosition(raw, 'business_days');
-  const workweek = Object.hasOwn(raw, 'workweek') ? parseWorkweek(raw['workweek']) : undefined;
-  const businessHours = Object.hasOwn(raw, 'business_hours') ? parseBusinessHours(raw['business_hours']) : undefined;
-  const dateSets = Object.hasOwn(raw, 'date_sets') ? parseDateSets(raw['date_sets']) : {};
+  const workweek = Object.hasOwn(raw, 'workweek') ? parseWorkweek(raw.workweek) : undefined;
+  const businessHours = Object.hasOwn(raw, 'business_hours')
+    ? parseBusinessHours(raw.business_hours)
+    : undefined;
+  const dateSets = Object.hasOwn(raw, 'date_sets') ? parseDateSets(raw.date_sets) : {};
 
   return {
     ...(holidays !== undefined ? { holidays } : {}),
@@ -106,7 +115,9 @@ function parseWorkweek(raw: unknown): readonly YrnkDayName[] {
 
   for (const day of raw) {
     if (typeof day !== 'string' || !DAY_NAMES.includes(day)) {
-      invalid(`workweek: day names must be mon through sun: ${typeof day === 'string' ? day : typeof day}`);
+      invalid(
+        `workweek: day names must be mon through sun: ${typeof day === 'string' ? day : typeof day}`,
+      );
     }
 
     if (seen.has(day)) {
@@ -136,7 +147,13 @@ function parseBusinessHours(raw: unknown): readonly (readonly [string, string])[
 
   const windows = raw.map((pair) => parseWindow(pair, 'Elements of business_hours'));
   const sorted = windows
-    .map((window) => [timeToSeconds(window[0]), window[1] === '24:00' ? 86400 : timeToSeconds(window[1])] as const)
+    .map(
+      (window) =>
+        [
+          timeToSeconds(window[0]),
+          window[1] === '24:00' ? 86400 : timeToSeconds(window[1]),
+        ] as const,
+    )
     .sort((a, b) => a[0] - b[0]);
 
   for (let i = 1; i < sorted.length; i++) {

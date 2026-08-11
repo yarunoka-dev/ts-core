@@ -10,7 +10,11 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-export function ensureKnownKeys(raw: Record<string, unknown>, known: readonly string[], where: string): void {
+export function ensureKnownKeys(
+  raw: Record<string, unknown>,
+  known: readonly string[],
+  where: string,
+): void {
   const unknown = Object.keys(raw).filter((key) => !known.includes(key));
 
   if (unknown.length > 0) {

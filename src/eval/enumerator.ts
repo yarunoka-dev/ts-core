@@ -1,7 +1,7 @@
+import type { YrnkDayCondition } from '../model.ts';
 import { atomMatches } from './day-matcher.ts';
 import { dayAt, isoNumberOf } from './days.ts';
 import type { ResolvedCalendar } from './resolved-calendar.ts';
-import type { YrnkDayCondition } from '../model.ts';
 
 /**
  * Atom × (year, month) → the enumeration of matching days of that month
@@ -41,7 +41,12 @@ export function atomDaysIn(
   }
 }
 
-function weekdayDays(isoDayOfWeek: number, year: number, month: number, timezone: string): number[] {
+function weekdayDays(
+  isoDayOfWeek: number,
+  year: number,
+  month: number,
+  timezone: string,
+): number[] {
   const first = dayAt(year, month, 1, timezone);
   const offset = (isoDayOfWeek - first.dayOfWeek + 7) % 7;
   const days: number[] = [];

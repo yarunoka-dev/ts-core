@@ -16,7 +16,12 @@ export type YrnkOrdinal = '1st' | '2nd' | '3rd' | '4th' | '5th' | 'last';
  * business_day / business_holiday are questions to the stacked
  * conclusion of the layers.
  */
-export type YrnkCalendarWord = 'weekday' | 'weekend' | 'holiday' | 'business_day' | 'business_holiday';
+export type YrnkCalendarWord =
+  | 'weekday'
+  | 'weekend'
+  | 'holiday'
+  | 'business_day'
+  | 'business_holiday';
 
 export type YrnkTimeUnit = 'hour' | 'minute' | 'second';
 

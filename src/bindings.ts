@@ -10,7 +10,10 @@ const registry = new WeakMap<YrnkDocument, ReadonlyMap<string, YrnkResolver>>();
 
 const NONE: ReadonlyMap<string, YrnkResolver> = new Map();
 
-export function attachBindings(document: YrnkDocument, bindings: ReadonlyMap<string, YrnkResolver>): void {
+export function attachBindings(
+  document: YrnkDocument,
+  bindings: ReadonlyMap<string, YrnkResolver>,
+): void {
   registry.set(document, bindings);
 }
 

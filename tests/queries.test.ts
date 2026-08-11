@@ -29,7 +29,11 @@ describe('matches', () => {
     const schedule = d.schedules[0]!;
 
     assert.equal(matches(d, schedule, '2026-07-25T10:00:00+09:00'), true);
-    assert.equal(matches(d, schedule, '2026-07-25T01:00:00Z'), true, 'the same instant in another offset');
+    assert.equal(
+      matches(d, schedule, '2026-07-25T01:00:00Z'),
+      true,
+      'the same instant in another offset',
+    );
     assert.equal(matches(d, schedule, '2026-07-25T10:00:01+09:00'), false);
     assert.equal(matches(d, schedule, '2026-07-24T10:00:00+09:00'), false);
   });
@@ -59,7 +63,11 @@ describe('matches', () => {
     assert.equal(matches(d, schedule, '2026-07-25T00:00:00+09:00'), true);
     assert.equal(matches(d, schedule, '2026-07-25T23:59:59+09:00'), true);
     assert.equal(matches(d, schedule, '2026-07-24T23:59:59+09:00'), false);
-    assert.equal(matches(d, schedule, '2026-07-25T15:00:00Z'), false, 'read on the document timezone, that is already the 26th');
+    assert.equal(
+      matches(d, schedule, '2026-07-25T15:00:00Z'),
+      false,
+      'read on the document timezone, that is already the 26th',
+    );
   });
 
   it('reads a day number that a month does not have as no match, never a rollover', () => {
@@ -92,10 +100,18 @@ describe('date axes and atoms', () => {
     const d = doc({ days: [['3rd', 'mon'], 'last_day_of_month'], times: ['10:00'] });
     const schedule = d.schedules[0]!;
 
-    assert.equal(matches(d, schedule, '2026-07-20T10:00:00+09:00'), true, 'the third Monday of July 2026');
+    assert.equal(
+      matches(d, schedule, '2026-07-20T10:00:00+09:00'),
+      true,
+      'the third Monday of July 2026',
+    );
     assert.equal(matches(d, schedule, '2026-07-13T10:00:00+09:00'), false, 'the second Monday');
     assert.equal(matches(d, schedule, '2026-07-31T10:00:00+09:00'), true, 'the last day');
-    assert.equal(matches(d, schedule, '2026-02-28T10:00:00+09:00'), true, 'the last day of a short month');
+    assert.equal(
+      matches(d, schedule, '2026-02-28T10:00:00+09:00'),
+      true,
+      'the last day of a short month',
+    );
     assert.equal(matches(d, schedule, '2026-02-27T10:00:00+09:00'), false);
   });
 
@@ -111,7 +127,11 @@ describe('date axes and atoms', () => {
     const d = doc({ days: [['5th', 'fri']], times: ['10:00'] });
     const schedule = d.schedules[0]!;
 
-    assert.equal(matches(d, schedule, '2026-07-31T10:00:00+09:00'), true, 'July 2026 has five Fridays');
+    assert.equal(
+      matches(d, schedule, '2026-07-31T10:00:00+09:00'),
+      true,
+      'July 2026 has five Fridays',
+    );
     assert.deepEqual(
       strings(occurrencesIn(d, schedule, '2026-06-01T00:00:00+09:00', '2026-06-30T23:59:59+09:00')),
       [],
@@ -139,7 +159,11 @@ describe('day cycle', () => {
     assert.equal(matches(d, schedule, '2026-07-14T03:00:00+09:00'), true);
     assert.equal(matches(d, schedule, '2026-07-15T03:00:00+09:00'), false);
     assert.equal(matches(d, schedule, '2026-07-16T03:00:00+09:00'), true);
-    assert.equal(matches(d, schedule, '2026-08-01T03:00:00+09:00'), true, '18 days after, still on the cycle');
+    assert.equal(
+      matches(d, schedule, '2026-08-01T03:00:00+09:00'),
+      true,
+      '18 days after, still on the cycle',
+    );
   });
 
   it('clips the day the validity starts by its time', () => {
@@ -164,7 +188,11 @@ describe('day cycle', () => {
     // Day one is 1/1; the 7-day row hits 3/5, 3/12, … in March.
     assert.equal(matches(d, schedule, '2026-03-05T09:00:00+09:00'), true);
     assert.equal(matches(d, schedule, '2026-03-04T09:00:00+09:00'), false);
-    assert.equal(matches(d, schedule, '2026-01-08T09:00:00+09:00'), false, 'January is filtered out');
+    assert.equal(
+      matches(d, schedule, '2026-01-08T09:00:00+09:00'),
+      false,
+      'January is filtered out',
+    );
   });
 });
 
@@ -178,7 +206,10 @@ describe('shift and if', () => {
   it('moves the payday to the previous business day', () => {
     // 2026-07-25 is a Saturday; the previous business day is Friday the
     // 24th.
-    const d = doc({ days: [25], shift: ['prev', 'or_same', 'business_day'], times: ['10:00'] }, businessCalendar);
+    const d = doc(
+      { days: [25], shift: ['prev', 'or_same', 'business_day'], times: ['10:00'] },
+      businessCalendar,
+    );
     const schedule = d.schedules[0]!;
 
     assert.equal(matches(d, schedule, '2026-07-24T10:00:00+09:00'), true);
@@ -189,7 +220,10 @@ describe('shift and if', () => {
 
   it('reads the strict form as the other meaning, not a default', () => {
     // Without or_same, a Tuesday the 25th moves to Monday the 24th.
-    const d = doc({ days: [25], shift: ['prev', 'business_day'], times: ['10:00'] }, businessCalendar);
+    const d = doc(
+      { days: [25], shift: ['prev', 'business_day'], times: ['10:00'] },
+      businessCalendar,
+    );
     const schedule = d.schedules[0]!;
 
     assert.equal(matches(d, schedule, '2026-08-25T10:00:00+09:00'), false);
@@ -198,7 +232,10 @@ describe('shift and if', () => {
 
   it('collapses consecutive base days landing on the same day', () => {
     // Sat 25th and Sun 26th both land on Friday the 24th: one occurrence.
-    const d = doc({ days: [25, 26], shift: ['prev', 'or_same', 'business_day'], times: ['10:00'] }, businessCalendar);
+    const d = doc(
+      { days: [25, 26], shift: ['prev', 'or_same', 'business_day'], times: ['10:00'] },
+      businessCalendar,
+    );
     const schedule = d.schedules[0]!;
 
     assert.deepEqual(
@@ -211,7 +248,10 @@ describe('shift and if', () => {
     // New Year's Eve 2027 is a Friday; holidays on 1/1 push the next
     // business day of a 12/31 base into January… use a Saturday base:
     // 2028-12-31 is a Sunday, shifted next business day lands 2029-01-01 (a Monday).
-    const d = doc({ months: [12], days: [31], shift: ['next', 'or_same', 'business_day'], times: ['09:00'] }, businessCalendar);
+    const d = doc(
+      { months: [12], days: [31], shift: ['next', 'or_same', 'business_day'], times: ['09:00'] },
+      businessCalendar,
+    );
     const schedule = d.schedules[0]!;
 
     assert.equal(matches(d, schedule, '2029-01-01T09:00:00+09:00'), true);
@@ -239,7 +279,11 @@ describe('shift and if', () => {
     );
     const schedule = d.schedules[0]!;
 
-    assert.equal(matches(d, schedule, '2026-07-17T08:00:00+09:00'), true, 'Friday before the holiday Monday 7/20');
+    assert.equal(
+      matches(d, schedule, '2026-07-17T08:00:00+09:00'),
+      true,
+      'Friday before the holiday Monday 7/20',
+    );
     assert.equal(matches(d, schedule, '2026-07-16T08:00:00+09:00'), false);
   });
 
@@ -248,7 +292,11 @@ describe('shift and if', () => {
     const schedule = d.schedules[0]!;
 
     assert.equal(matches(d, schedule, '2026-07-13T09:00:00+09:00'), true);
-    assert.equal(matches(d, schedule, '2026-07-20T09:00:00+09:00'), false, 'the holiday Monday is skipped, not moved');
+    assert.equal(
+      matches(d, schedule, '2026-07-20T09:00:00+09:00'),
+      false,
+      'the holiday Monday is skipped, not moved',
+    );
   });
 });
 
@@ -270,8 +318,16 @@ describe('the layer model', () => {
     assert.equal(business(d, '2026-07-22T00:00:00+09:00'), true, 'an ordinary Wednesday');
     assert.equal(business(d, '2026-07-20T00:00:00+09:00'), false, 'a public holiday');
     assert.equal(business(d, '2026-07-21T00:00:00+09:00'), false, 'an organization closure');
-    assert.equal(business(d, '2026-07-23T00:00:00+09:00'), true, 'business_days overrides the holiday below it');
-    assert.equal(business(d, '2026-07-25T00:00:00+09:00'), true, 'business_days overrides the weekly pattern');
+    assert.equal(
+      business(d, '2026-07-23T00:00:00+09:00'),
+      true,
+      'business_days overrides the holiday below it',
+    );
+    assert.equal(
+      business(d, '2026-07-25T00:00:00+09:00'),
+      true,
+      'business_days overrides the weekly pattern',
+    );
     assert.equal(business(d, '2026-07-26T00:00:00+09:00'), false, 'an ordinary Sunday');
   });
 
@@ -279,17 +335,29 @@ describe('the layer model', () => {
     const shifted = { ...calendar, workweek: ['tue', 'wed', 'thu', 'fri', 'sat'] };
     const d = doc({ days: ['weekday'], allday: true }, shifted);
 
-    assert.equal(business(d, '2026-07-27T00:00:00+09:00'), true, 'Monday stays a weekday whatever the workweek says');
+    assert.equal(
+      business(d, '2026-07-27T00:00:00+09:00'),
+      true,
+      'Monday stays a weekday whatever the workweek says',
+    );
 
     const e = doc({ days: ['business_holiday'], allday: true }, shifted);
 
-    assert.equal(matches(e, e.schedules[0]!, '2026-07-27T00:00:00+09:00'), true, 'and also a business holiday');
+    assert.equal(
+      matches(e, e.schedules[0]!, '2026-07-27T00:00:00+09:00'),
+      true,
+      'and also a business holiday',
+    );
   });
 
   it('keeps holiday on the holidays list alone', () => {
     const d = doc({ days: ['holiday'], allday: true }, calendar);
 
-    assert.equal(business(d, '2026-07-23T00:00:00+09:00'), true, 'a working day, but still a holiday');
+    assert.equal(
+      business(d, '2026-07-23T00:00:00+09:00'),
+      true,
+      'a working day, but still a holiday',
+    );
   });
 });
 
@@ -298,7 +366,9 @@ describe('times expansion', () => {
     const d = doc({ days: [14], times: { every: [1, 'hour'], between: ['08:30', '11:00'] } });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-14T23:59:59+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-14T23:59:59+09:00'),
+      ),
       ['2026-07-14T08:30:00+09:00', '2026-07-14T09:30:00+09:00', '2026-07-14T10:30:00+09:00'],
     );
   });
@@ -307,7 +377,9 @@ describe('times expansion', () => {
     const d = doc({ days: [14], times: { every: [4, 'hour'], between: ['08:00', '20:00'] } });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-14T23:59:59+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-14T23:59:59+09:00'),
+      ),
       ['2026-07-14T08:00:00+09:00', '2026-07-14T12:00:00+09:00', '2026-07-14T16:00:00+09:00'],
     );
   });
@@ -315,12 +387,24 @@ describe('times expansion', () => {
   it('re-anchors per window over business hours', () => {
     const d = doc(
       { days: [14], times: { every: [2, 'hour'], between: 'business_hour' } },
-      { business_hours: [['09:00', '12:00'], ['13:00', '16:00']] },
+      {
+        business_hours: [
+          ['09:00', '12:00'],
+          ['13:00', '16:00'],
+        ],
+      },
     );
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-14T23:59:59+09:00')),
-      ['2026-07-14T09:00:00+09:00', '2026-07-14T11:00:00+09:00', '2026-07-14T13:00:00+09:00', '2026-07-14T15:00:00+09:00'],
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-14T23:59:59+09:00'),
+      ),
+      [
+        '2026-07-14T09:00:00+09:00',
+        '2026-07-14T11:00:00+09:00',
+        '2026-07-14T13:00:00+09:00',
+        '2026-07-14T15:00:00+09:00',
+      ],
     );
   });
 
@@ -328,10 +412,16 @@ describe('times expansion', () => {
     const d = doc({ times: { every: [7, 'hour'] } });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-15T08:00:00+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-14T00:00:00+09:00', '2026-07-15T08:00:00+09:00'),
+      ),
       [
-        '2026-07-14T00:00:00+09:00', '2026-07-14T07:00:00+09:00', '2026-07-14T14:00:00+09:00',
-        '2026-07-14T21:00:00+09:00', '2026-07-15T00:00:00+09:00', '2026-07-15T07:00:00+09:00',
+        '2026-07-14T00:00:00+09:00',
+        '2026-07-14T07:00:00+09:00',
+        '2026-07-14T14:00:00+09:00',
+        '2026-07-14T21:00:00+09:00',
+        '2026-07-15T00:00:00+09:00',
+        '2026-07-15T07:00:00+09:00',
       ],
     );
   });
@@ -342,32 +432,61 @@ describe('hasMatchIn', () => {
     const d = doc({ days: [25], times: ['10:00'] });
     const schedule = d.schedules[0]!;
 
-    assert.equal(hasMatchIn(d, schedule, '2026-07-25T10:00:00+09:00', '2026-07-26T00:00:00+09:00'), false);
-    assert.equal(hasMatchIn(d, schedule, '2026-07-25T09:59:59+09:00', '2026-07-25T10:00:00+09:00'), true);
+    assert.equal(
+      hasMatchIn(d, schedule, '2026-07-25T10:00:00+09:00', '2026-07-26T00:00:00+09:00'),
+      false,
+    );
+    assert.equal(
+      hasMatchIn(d, schedule, '2026-07-25T09:59:59+09:00', '2026-07-25T10:00:00+09:00'),
+      true,
+    );
   });
 
   it('answers an empty or inverted period with no', () => {
     const d = doc({ times: { every: [1, 'second'] } });
     const schedule = d.schedules[0]!;
 
-    assert.equal(hasMatchIn(d, schedule, '2026-07-25T10:00:00+09:00', '2026-07-25T10:00:00+09:00'), false);
-    assert.equal(hasMatchIn(d, schedule, '2026-07-25T10:00:01+09:00', '2026-07-25T10:00:00+09:00'), false);
+    assert.equal(
+      hasMatchIn(d, schedule, '2026-07-25T10:00:00+09:00', '2026-07-25T10:00:00+09:00'),
+      false,
+    );
+    assert.equal(
+      hasMatchIn(d, schedule, '2026-07-25T10:00:01+09:00', '2026-07-25T10:00:00+09:00'),
+      false,
+    );
   });
 
   it('counts an all-day occurrence while its day overlaps the period', () => {
     const d = doc({ days: [25], allday: true });
     const schedule = d.schedules[0]!;
 
-    assert.equal(hasMatchIn(d, schedule, '2026-07-25T22:00:00+09:00', '2026-07-25T23:00:00+09:00'), true, 'a day is due for as long as it lasts');
-    assert.equal(hasMatchIn(d, schedule, '2026-07-26T00:00:00+09:00', '2026-07-27T00:00:00+09:00'), false);
-    assert.equal(hasMatchIn(d, schedule, '2026-07-24T00:00:00+09:00', '2026-07-25T00:00:00+09:00'), true, 'the period end touches the day start');
+    assert.equal(
+      hasMatchIn(d, schedule, '2026-07-25T22:00:00+09:00', '2026-07-25T23:00:00+09:00'),
+      true,
+      'a day is due for as long as it lasts',
+    );
+    assert.equal(
+      hasMatchIn(d, schedule, '2026-07-26T00:00:00+09:00', '2026-07-27T00:00:00+09:00'),
+      false,
+    );
+    assert.equal(
+      hasMatchIn(d, schedule, '2026-07-24T00:00:00+09:00', '2026-07-25T00:00:00+09:00'),
+      true,
+      'the period end touches the day start',
+    );
   });
 
   it('spans months without missing distant occurrences', () => {
     const d = doc({ months: [1], days: [1], times: ['00:00'] });
 
-    assert.equal(hasMatchIn(d, d.schedules[0]!, '2026-02-01T00:00:00+09:00', '2026-12-31T23:59:59+09:00'), false);
-    assert.equal(hasMatchIn(d, d.schedules[0]!, '2026-02-01T00:00:00+09:00', '2027-01-01T00:00:00+09:00'), true);
+    assert.equal(
+      hasMatchIn(d, d.schedules[0]!, '2026-02-01T00:00:00+09:00', '2026-12-31T23:59:59+09:00'),
+      false,
+    );
+    assert.equal(
+      hasMatchIn(d, d.schedules[0]!, '2026-02-01T00:00:00+09:00', '2027-01-01T00:00:00+09:00'),
+      true,
+    );
   });
 });
 
@@ -376,14 +495,21 @@ describe('occurrencesIn', () => {
     const d = doc({ days: [25], times: ['10:00', '12:00'] });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-25T10:00:00+09:00', '2026-07-25T12:00:00+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-25T10:00:00+09:00', '2026-07-25T12:00:00+09:00'),
+      ),
       ['2026-07-25T10:00:00+09:00', '2026-07-25T12:00:00+09:00'],
     );
   });
 
   it('answers all-day occurrences as dates', () => {
     const d = doc({ days: ['sat'], allday: true });
-    const occurrences = occurrencesIn(d, d.schedules[0]!, '2026-07-01T00:00:00+09:00', '2026-07-15T00:00:00+09:00');
+    const occurrences = occurrencesIn(
+      d,
+      d.schedules[0]!,
+      '2026-07-01T00:00:00+09:00',
+      '2026-07-15T00:00:00+09:00',
+    );
 
     assert.ok(occurrences.every((occurrence) => occurrence instanceof Temporal.PlainDate));
     assert.deepEqual(strings(occurrences), ['2026-07-04', '2026-07-11']);
@@ -393,7 +519,9 @@ describe('occurrencesIn', () => {
     const d = doc({ days: [14], allday: true });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-14T12:00:00+09:00', '2026-07-14T13:00:00+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-14T12:00:00+09:00', '2026-07-14T13:00:00+09:00'),
+      ),
       ['2026-07-14'],
     );
   });
@@ -402,10 +530,14 @@ describe('occurrencesIn', () => {
     const d = doc({ days: [1, 2], times: ['23:00', '01:00'] });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-01T00:00:00+09:00', '2026-07-03T00:00:00+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-01T00:00:00+09:00', '2026-07-03T00:00:00+09:00'),
+      ),
       [
-        '2026-07-01T01:00:00+09:00', '2026-07-01T23:00:00+09:00',
-        '2026-07-02T01:00:00+09:00', '2026-07-02T23:00:00+09:00',
+        '2026-07-01T01:00:00+09:00',
+        '2026-07-01T23:00:00+09:00',
+        '2026-07-02T01:00:00+09:00',
+        '2026-07-02T23:00:00+09:00',
       ],
     );
   });
@@ -416,7 +548,9 @@ describe('from / until clipping', () => {
     const d = doc({ from: '2026-07-01 09:00', until: '2026-07-03 09:00', times: ['09:00'] });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-06-01T00:00:00+09:00', '2026-08-01T00:00:00+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-06-01T00:00:00+09:00', '2026-08-01T00:00:00+09:00'),
+      ),
       ['2026-07-01T09:00:00+09:00', '2026-07-02T09:00:00+09:00'],
       'a point at from is included; a point at until is not',
     );
@@ -426,7 +560,9 @@ describe('from / until clipping', () => {
     const d = doc({ from: '2026-07-14 12:00', days: [14, 15], allday: true });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-01T00:00:00+09:00', '2026-08-01T00:00:00+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-01T00:00:00+09:00', '2026-08-01T00:00:00+09:00'),
+      ),
       ['2026-07-14', '2026-07-15'],
       'the 14th is still partly inside',
     );
@@ -438,8 +574,15 @@ describe('the interval every', () => {
     const d = doc({ from: '2026-07-17 10:00', every: [7, 'hour'] });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-17T10:00:00+09:00', '2026-07-18T08:00:00+09:00')),
-      ['2026-07-17T10:00:00+09:00', '2026-07-17T17:00:00+09:00', '2026-07-18T00:00:00+09:00', '2026-07-18T07:00:00+09:00'],
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-17T10:00:00+09:00', '2026-07-18T08:00:00+09:00'),
+      ),
+      [
+        '2026-07-17T10:00:00+09:00',
+        '2026-07-17T17:00:00+09:00',
+        '2026-07-18T00:00:00+09:00',
+        '2026-07-18T07:00:00+09:00',
+      ],
     );
   });
 
@@ -447,7 +590,9 @@ describe('the interval every', () => {
     const d = doc({ from: '2026-07-17 10:00', every: [90, 'second'] });
 
     assert.deepEqual(
-      strings(occurrencesIn(d, d.schedules[0]!, '2026-07-17T10:00:00+09:00', '2026-07-17T10:04:00+09:00')),
+      strings(
+        occurrencesIn(d, d.schedules[0]!, '2026-07-17T10:00:00+09:00', '2026-07-17T10:04:00+09:00'),
+      ),
       ['2026-07-17T10:00:00+09:00', '2026-07-17T10:01:30+09:00', '2026-07-17T10:03:00+09:00'],
     );
   });
@@ -464,6 +609,9 @@ describe('the interval every', () => {
   it('answers a period far from the anchor without walking to it', () => {
     const d = doc({ from: '2026-01-01 00:00', every: [1, 'second'] });
 
-    assert.equal(hasMatchIn(d, d.schedules[0]!, '2043-06-15T00:00:00+09:00', '2043-06-15T00:00:01+09:00'), true);
+    assert.equal(
+      hasMatchIn(d, d.schedules[0]!, '2043-06-15T00:00:00+09:00', '2043-06-15T00:00:01+09:00'),
+      true,
+    );
   });
 });

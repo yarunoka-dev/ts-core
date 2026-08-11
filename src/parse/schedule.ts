@@ -1,12 +1,25 @@
-import { YrnkError } from '../error.ts';
 import { descriptionProblem, labelProblem } from '../annotations.ts';
-import { isRealDate, resolveWall } from '../temporal.ts';
+import { YrnkError } from '../error.ts';
 import type { YrnkSchedule, YrnkTimeSpec } from '../model.ts';
+import { isRealDate, resolveWall } from '../temporal.ts';
 import { parseDayExpression, parseIf, parseShift } from './atoms.ts';
-import { parseSequenceEvery, parseTimes } from './times.ts';
 import { ensureKnownKeys, invalid, isPlainObject, typeOf } from './shared.ts';
+import { parseSequenceEvery, parseTimes } from './times.ts';
 
-const KNOWN_KEYS = ['from', 'until', 'years', 'months', 'days', 'shift', 'if', 'times', 'allday', 'every', 'label', 'description'];
+const KNOWN_KEYS = [
+  'from',
+  'until',
+  'years',
+  'months',
+  'days',
+  'shift',
+  'if',
+  'times',
+  'allday',
+  'every',
+  'label',
+  'description',
+];
 
 /** The from / until literal: zero-padded, a single space, no seconds. */
 const BOUNDARY_PATTERN = /^(\d{4})-(\d{2})-(\d{2}) ([01]\d|2[0-3]):[0-5]\d$/;
@@ -27,9 +40,9 @@ export function parseSchedule(raw: unknown, timezone: string): YrnkSchedule {
   const time = parseTimeSpec(raw);
   const years = parseIntAxis(raw, 'years', 1, 9999);
   const months = parseIntAxis(raw, 'months', 1, 12);
-  const days = Object.hasOwn(raw, 'days') ? parseDayExpression(raw['days']) : undefined;
-  const shift = Object.hasOwn(raw, 'shift') ? parseShift(raw['shift']) : undefined;
-  const ifGuard = Object.hasOwn(raw, 'if') ? parseIf(raw['if']) : undefined;
+  const days = Object.hasOwn(raw, 'days') ? parseDayExpression(raw.days) : undefined;
+  const shift = Object.hasOwn(raw, 'shift') ? parseShift(raw.shift) : undefined;
+  const ifGuard = Object.hasOwn(raw, 'if') ? parseIf(raw.if) : undefined;
   const from = parseBoundary(raw, 'from');
   const until = parseBoundary(raw, 'until');
   const label = parseAnnotation(raw, 'label', labelProblem);
@@ -55,16 +68,23 @@ export function parseSchedule(raw: unknown, timezone: string): YrnkSchedule {
     }
 
     if (days?.some((atom) => atom.kind === 'day-cycle')) {
-      invalid('A schedule that uses ["every", N, "day"] requires from (there is no way to start counting without it)');
+      invalid(
+        'A schedule that uses ["every", N, "day"] requires from (there is no way to start counting without it)',
+      );
     }
   }
 
   // The interval every is a sequence of points, not a product of
   // matching days × times, so it does not combine with the date axes and
   // modifiers.
-  if (time.kind === 'sequence'
-    && (years !== undefined || months !== undefined || days !== undefined
-      || shift !== undefined || ifGuard !== undefined)) {
+  if (
+    time.kind === 'sequence' &&
+    (years !== undefined ||
+      months !== undefined ||
+      days !== undefined ||
+      shift !== undefined ||
+      ifGuard !== undefined)
+  ) {
     invalid('The interval every cannot be combined with years / months / days / shift / if');
   }
 
@@ -96,14 +116,14 @@ function parseTimeSpec(raw: Record<string, unknown>): YrnkTimeSpec {
   }
 
   if (key === 'times') {
-    return parseTimes(raw['times']);
+    return parseTimes(raw.times);
   }
 
   if (key === 'every') {
-    return parseSequenceEvery(raw['every']);
+    return parseSequenceEvery(raw.every);
   }
 
-  if (raw['allday'] !== true) {
+  if (raw.allday !== true) {
     invalid('allday accepts only true (omit it otherwise)');
   }
 
@@ -158,7 +178,9 @@ function parseIntAxis(
 
   for (const value of values) {
     if (typeof value !== 'number' || !Number.isInteger(value)) {
-      invalid(`Elements of ${axis} must be integers: ${typeof value === 'number' ? value : typeOf(value)}`);
+      invalid(
+        `Elements of ${axis} must be integers: ${typeof value === 'number' ? value : typeOf(value)}`,
+      );
     }
 
     if (value < min || value > max) {

@@ -11,16 +11,8 @@
 // The queries are per schedule, so the top-level OR is composed here:
 // any for the judgments, a merge for the enumeration.
 import process from 'node:process';
-
-import {
-  build,
-  hasMatchIn,
-  matches,
-  occurrencesIn,
-  parse,
-  YrnkError,
-} from '../../src/index.ts';
 import type { YrnkDocument, YrnkOccurrence, YrnkResolver } from '../../src/index.ts';
+import { build, hasMatchIn, matches, occurrencesIn, parse, YrnkError } from '../../src/index.ts';
 
 function breakage(message: string): never {
   process.stderr.write(`${message}\n`);
@@ -59,7 +51,7 @@ function handle(env: Record<string, unknown>): Record<string, unknown> {
   let document: YrnkDocument;
 
   try {
-    document = parse(env['document'], { resolvers: bindingsOf(env) });
+    document = parse(env.document, { resolvers: bindingsOf(env) });
   } catch (error) {
     if (error instanceof YrnkError) {
       return { invalid: true };
@@ -68,11 +60,11 @@ function handle(env: Record<string, unknown>): Record<string, unknown> {
     throw error;
   }
 
-  if (env['action'] === 'emit') {
+  if (env.action === 'emit') {
     return { document: build(document) };
   }
 
-  const query = env['query'];
+  const query = env.query;
 
   if (typeof query !== 'object' || query === null || Array.isArray(query)) {
     breakage('An eval request carries a query');
@@ -81,7 +73,7 @@ function handle(env: Record<string, unknown>): Record<string, unknown> {
   const q = query as Record<string, unknown>;
 
   try {
-    switch (q['type']) {
+    switch (q.type) {
       case 'point': {
         const at = instantOf(q, 'at');
 
@@ -91,7 +83,11 @@ function handle(env: Record<string, unknown>): Record<string, unknown> {
         const after = instantOf(q, 'after');
         const through = instantOf(q, 'through');
 
-        return { result: document.schedules.some((schedule) => hasMatchIn(document, schedule, after, through)) };
+        return {
+          result: document.schedules.some((schedule) =>
+            hasMatchIn(document, schedule, after, through),
+          ),
+        };
       }
       case 'enumeration': {
         const from = instantOf(q, 'from');
@@ -111,7 +107,11 @@ function handle(env: Record<string, unknown>): Record<string, unknown> {
   }
 }
 
-function enumerate(document: YrnkDocument, from: Temporal.Instant, through: Temporal.Instant): string[] {
+function enumerate(
+  document: YrnkDocument,
+  from: Temporal.Instant,
+  through: Temporal.Instant,
+): string[] {
   // The union answers each occurrence once, deduplicated within a kind:
   // an all-day occurrence by its day, a timed one by its instant. The
   // kinds never merge.
@@ -119,9 +119,10 @@ function enumerate(document: YrnkDocument, from: Temporal.Instant, through: Temp
 
   for (const schedule of document.schedules) {
     for (const occurrence of occurrencesIn(document, schedule, from, through)) {
-      const key = occurrence instanceof Temporal.PlainDate
-        ? `d:${occurrence.toString()}`
-        : `t:${occurrence.epochMilliseconds}`;
+      const key =
+        occurrence instanceof Temporal.PlainDate
+          ? `d:${occurrence.toString()}`
+          : `t:${occurrence.epochMilliseconds}`;
 
       occurrences.set(key, occurrence);
     }
@@ -132,9 +133,10 @@ function enumerate(document: YrnkDocument, from: Temporal.Instant, through: Temp
   const ordered = [...occurrences.values()]
     .map((occurrence) => ({
       occurrence,
-      instant: occurrence instanceof Temporal.PlainDate
-        ? occurrence.toZonedDateTime(document.timezone).epochMilliseconds
-        : occurrence.epochMilliseconds,
+      instant:
+        occurrence instanceof Temporal.PlainDate
+          ? occurrence.toZonedDateTime(document.timezone).epochMilliseconds
+          : occurrence.epochMilliseconds,
       timed: occurrence instanceof Temporal.PlainDate ? 0 : 1,
     }))
     .sort((a, b) => a.instant - b.instant || a.timed - b.timed);
@@ -153,7 +155,7 @@ function enumerate(document: YrnkDocument, from: Temporal.Instant, through: Temp
  * answer; the literals themselves stay unvalidated on their way in.
  */
 function bindingsOf(env: Record<string, unknown>): Record<string, YrnkResolver> {
-  const raw = env['bindings'] ?? {};
+  const raw = env.bindings ?? {};
 
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     breakage('bindings must map resolver names to date lists');

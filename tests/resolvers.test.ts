@@ -75,13 +75,16 @@ describe('resolver evaluation', () => {
   });
 
   it('backs calendar definitions by name', () => {
-    const d = parse({
-      version: '1.0',
-      timezone: 'Asia/Tokyo',
-      resolvers: ['yasumi-jp'],
-      calendar: { holidays: 'yasumi-jp' },
-      schedules: [{ days: ['holiday'], allday: true }],
-    }, { resolvers: { 'yasumi-jp': () => ['2026-01-01'] } });
+    const d = parse(
+      {
+        version: '1.0',
+        timezone: 'Asia/Tokyo',
+        resolvers: ['yasumi-jp'],
+        calendar: { holidays: 'yasumi-jp' },
+        schedules: [{ days: ['holiday'], allday: true }],
+      },
+      { resolvers: { 'yasumi-jp': () => ['2026-01-01'] } },
+    );
 
     assert.equal(matches(d, d.schedules[0]!, '2026-01-01T12:00:00+09:00'), true);
     assert.equal(matches(d, d.schedules[0]!, '2026-01-02T12:00:00+09:00'), false);
@@ -94,8 +97,12 @@ describe('resolver evaluation', () => {
     const d = parse(base, { resolvers: { closures: () => ['2026-08-05', '2027-08-05'] } });
 
     assert.deepEqual(
-      occurrencesIn(d, d.schedules[0]!, '2026-01-01T00:00:00+09:00', '2026-12-31T23:59:59+09:00')
-        .map(String),
+      occurrencesIn(
+        d,
+        d.schedules[0]!,
+        '2026-01-01T00:00:00+09:00',
+        '2026-12-31T23:59:59+09:00',
+      ).map(String),
       ['2026-08-05'],
     );
   });
@@ -122,6 +129,10 @@ describe('ensureResolvable', () => {
 
     ensureResolvable(d);
 
-    assert.equal(calls, 0, 'passing says the references are answerable, not what the answers will be');
+    assert.equal(
+      calls,
+      0,
+      'passing says the references are answerable, not what the answers will be',
+    );
   });
 });

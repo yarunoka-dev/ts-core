@@ -1,6 +1,6 @@
+import type { YrnkDayCondition } from '../model.ts';
 import { isoNumberOf } from './days.ts';
 import type { ResolvedCalendar } from './resolved-calendar.ts';
-import type { YrnkDayCondition } from '../model.ts';
 
 /**
  * The matcher for day expression atoms — the single authority on
@@ -12,7 +12,11 @@ import type { YrnkDayCondition } from '../model.ts';
  *     holidays            public holidays; closed by default
  *     workweek            bottom layer: the weekly pattern that sets the default
  */
-export function atomMatches(atom: YrnkDayCondition, day: Temporal.PlainDate, resolved: ResolvedCalendar): boolean {
+export function atomMatches(
+  atom: YrnkDayCondition,
+  day: Temporal.PlainDate,
+  resolved: ResolvedCalendar,
+): boolean {
   switch (atom.kind) {
     case 'month-day':
       return day.day === atom.day;
@@ -40,7 +44,11 @@ export function atomMatches(atom: YrnkDayCondition, day: Temporal.PlainDate, res
   }
 }
 
-function matchesOrdinalWeekday(ordinal: string, isoDayOfWeek: number, day: Temporal.PlainDate): boolean {
+function matchesOrdinalWeekday(
+  ordinal: string,
+  isoDayOfWeek: number,
+  day: Temporal.PlainDate,
+): boolean {
   if (day.dayOfWeek !== isoDayOfWeek) {
     return false;
   }

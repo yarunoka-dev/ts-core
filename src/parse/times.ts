@@ -20,7 +20,12 @@ export function timeToSeconds(value: string): number {
  * midnight cannot be written).
  */
 export function parseWindow(raw: unknown, where: string): readonly [string, string] {
-  if (!Array.isArray(raw) || raw.length !== 2 || typeof raw[0] !== 'string' || typeof raw[1] !== 'string') {
+  if (
+    !Array.isArray(raw) ||
+    raw.length !== 2 ||
+    typeof raw[0] !== 'string' ||
+    typeof raw[1] !== 'string'
+  ) {
     invalid(`${where} must be an [HH:MM, HH:MM] pair`);
   }
 
@@ -38,7 +43,9 @@ export function parseWindow(raw: unknown, where: string): readonly [string, stri
   const endSeconds = end === '24:00' ? 86400 : timeToSeconds(end);
 
   if (startSeconds >= endSeconds) {
-    invalid(`Time window requires start < end (crossing midnight is not supported): [${start}, ${end}]`);
+    invalid(
+      `Time window requires start < end (crossing midnight is not supported): [${start}, ${end}]`,
+    );
   }
 
   return [start, end];
@@ -69,7 +76,9 @@ function parseFixedTimes(raw: readonly unknown[]): YrnkTimeSpec {
 
   for (const time of raw) {
     if (typeof time !== 'string' || !isTimeLiteral(time)) {
-      invalid(`Elements of times must be zero-padded HH:MM strings: ${typeof time === 'string' ? time : typeOf(time)}`);
+      invalid(
+        `Elements of times must be zero-padded HH:MM strings: ${typeof time === 'string' ? time : typeOf(time)}`,
+      );
     }
 
     if (seen.has(time)) {
@@ -89,7 +98,7 @@ function parseGrid(raw: Record<string, unknown>): YrnkTimeSpec {
     invalid('The times grid requires every');
   }
 
-  const [amount, unit] = parseEveryTuple(raw['every']);
+  const [amount, unit] = parseEveryTuple(raw.every);
 
   if (amount > GRID_MAX[unit]) {
     invalid(`Count of every must be at most ${GRID_MAX[unit]} for the unit ${unit}: ${amount}`);
@@ -98,7 +107,7 @@ function parseGrid(raw: Record<string, unknown>): YrnkTimeSpec {
   return {
     kind: 'grid',
     every: [amount, unit],
-    between: Object.hasOwn(raw, 'between') ? parseBetween(raw['between']) : null,
+    between: Object.hasOwn(raw, 'between') ? parseBetween(raw.between) : null,
   };
 }
 
@@ -122,7 +131,9 @@ function parseBetween(raw: unknown): readonly [string, string] | 'business_hour'
  */
 export function parseSequenceEvery(raw: unknown): YrnkTimeSpec {
   if (Array.isArray(raw) && raw[1] === 'day') {
-    invalid('The interval every does not take "day" (write whole-day cycles as ["every", N, "day"] in days)');
+    invalid(
+      'The interval every does not take "day" (write whole-day cycles as ["every", N, "day"] in days)',
+    );
   }
 
   const [amount, unit] = parseEveryTuple(raw);
@@ -142,7 +153,9 @@ function parseEveryTuple(raw: unknown): readonly [number, YrnkTimeUnit] {
   }
 
   if (unit !== 'hour' && unit !== 'minute' && unit !== 'second') {
-    invalid(`Unit of every must be "hour" | "minute" | "second" (singular): ${typeof unit === 'string' ? unit : typeOf(unit)}`);
+    invalid(
+      `Unit of every must be "hour" | "minute" | "second" (singular): ${typeof unit === 'string' ? unit : typeOf(unit)}`,
+    );
   }
 
   return [amount, unit];

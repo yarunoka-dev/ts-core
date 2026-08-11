@@ -1,10 +1,19 @@
-import { atomMatches } from './day-matcher.ts';
-import { atomDaysIn } from './enumerator.ts';
-import { addDays, atTime, dayAt, daysBetween, epochSecOf, monthIndex, wallDateOfSec, yearMonthAt } from './days.ts';
-import { secondsOf } from './times-expander.ts';
+import type { YrnkSchedule, YrnkShift, YrnkTimeUnit } from '../model.ts';
 import { resolveWall } from '../temporal.ts';
+import { atomMatches } from './day-matcher.ts';
+import {
+  addDays,
+  atTime,
+  dayAt,
+  daysBetween,
+  epochSecOf,
+  monthIndex,
+  wallDateOfSec,
+  yearMonthAt,
+} from './days.ts';
+import { atomDaysIn } from './enumerator.ts';
 import type { ResolvedCalendar } from './resolved-calendar.ts';
-import type { YrnkSchedule, YrnkShift, YrnkTimeSpec, YrnkTimeUnit } from '../model.ts';
+import { secondsOf } from './times-expander.ts';
 
 /**
  * Enumeration of candidate months and composition of if / shift / times
@@ -65,7 +74,8 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
   function boundsOf(schedule: YrnkSchedule): { fromSec: number; untilSec: number } {
     return {
       fromSec: schedule.from !== undefined ? epochSecOf(resolveBoundary(schedule.from)) : -Infinity,
-      untilSec: schedule.until !== undefined ? epochSecOf(resolveBoundary(schedule.until)) : Infinity,
+      untilSec:
+        schedule.until !== undefined ? epochSecOf(resolveBoundary(schedule.until)) : Infinity,
     };
   }
 
@@ -130,7 +140,9 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
     const throughDay = wallDateOfSec(upper, timezone);
 
     if (schedule.time.kind === 'allday') {
-      return landedDaysWithin(schedule, afterDay, throughDay).some((day) => dayOverlaps(day, lower, upper));
+      return landedDaysWithin(schedule, afterDay, throughDay).some((day) =>
+        dayOverlaps(day, lower, upper),
+      );
     }
 
     const seconds = secondsOf(schedule.time, resolved);
@@ -144,7 +156,16 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
     for (let index = monthIndex(afterDay); index <= monthIndex(throughDay); index++) {
       const [year, month] = yearMonthAt(index);
 
-      if (hasInstantIn(landedDaysIn(schedule, year, month), seconds, lower, upper, afterDay, throughDay)) {
+      if (
+        hasInstantIn(
+          landedDaysIn(schedule, year, month),
+          seconds,
+          lower,
+          upper,
+          afterDay,
+          throughDay,
+        )
+      ) {
         return true;
       }
     }
@@ -223,7 +244,10 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
 
     const collect = (days: readonly Temporal.PlainDate[]): void => {
       for (const day of days) {
-        if (Temporal.PlainDate.compare(fromDay, day) <= 0 && Temporal.PlainDate.compare(day, throughDay) <= 0) {
+        if (
+          Temporal.PlainDate.compare(fromDay, day) <= 0 &&
+          Temporal.PlainDate.compare(day, throughDay) <= 0
+        ) {
           found.set(day.toString(), day);
         }
       }
@@ -240,7 +264,12 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
         const [year, month] = yearMonthAt(index);
         const monthLast = lastDayOf(year, month);
 
-        if (Temporal.PlainDate.compare(fromDay, addDays(monthLast, SHIFT_SEARCH_LIMIT_DAYS, timezone)) > 0) {
+        if (
+          Temporal.PlainDate.compare(
+            fromDay,
+            addDays(monthLast, SHIFT_SEARCH_LIMIT_DAYS, timezone),
+          ) > 0
+        ) {
           break;
         }
 
@@ -260,7 +289,12 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       for (let index = monthIndex(throughDay) + 1; ; index++) {
         const [year, month] = yearMonthAt(index);
 
-        if (Temporal.PlainDate.compare(addDays(dayAt(year, month, 1, timezone), -SHIFT_SEARCH_LIMIT_DAYS, timezone), throughDay) > 0) {
+        if (
+          Temporal.PlainDate.compare(
+            addDays(dayAt(year, month, 1, timezone), -SHIFT_SEARCH_LIMIT_DAYS, timezone),
+            throughDay,
+          ) > 0
+        ) {
           break;
         }
 
@@ -298,7 +332,12 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       const [year, month] = yearMonthAt(index);
       const monthLast = lastDayOf(year, month);
 
-      if (Temporal.PlainDate.compare(afterDay, addDays(monthLast, SHIFT_SEARCH_LIMIT_DAYS, timezone)) > 0) {
+      if (
+        Temporal.PlainDate.compare(
+          afterDay,
+          addDays(monthLast, SHIFT_SEARCH_LIMIT_DAYS, timezone),
+        ) > 0
+      ) {
         return false;
       }
 
@@ -329,7 +368,12 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       const [year, month] = yearMonthAt(index);
       const monthFirst = dayAt(year, month, 1, timezone);
 
-      if (Temporal.PlainDate.compare(addDays(monthFirst, -SHIFT_SEARCH_LIMIT_DAYS, timezone), throughDay) > 0) {
+      if (
+        Temporal.PlainDate.compare(
+          addDays(monthFirst, -SHIFT_SEARCH_LIMIT_DAYS, timezone),
+          throughDay,
+        ) > 0
+      ) {
         return false;
       }
 
@@ -361,9 +405,10 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       return [];
     }
 
-    const dayNumbers = schedule.days === undefined
-      ? wholeMonth(year, month)
-      : enumerateAtomDays(schedule, year, month);
+    const dayNumbers =
+      schedule.days === undefined
+        ? wholeMonth(year, month)
+        : enumerateAtomDays(schedule, year, month);
     const landed: Temporal.PlainDate[] = [];
 
     for (const dayNumber of dayNumbers) {
@@ -381,7 +426,7 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
 
       const previous = landed[landed.length - 1];
 
-      if (previous !== undefined && previous.equals(day)) {
+      if (previous?.equals(day)) {
         continue;
       }
 
@@ -406,9 +451,10 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
     const seen = new Set<number>();
 
     for (const atom of schedule.days ?? []) {
-      const days = atom.kind === 'day-cycle'
-        ? cycleDaysIn(schedule, atom.interval, year, month)
-        : atomDaysIn(atom, year, month, timezone, resolved);
+      const days =
+        atom.kind === 'day-cycle'
+          ? cycleDaysIn(schedule, atom.interval, year, month)
+          : atomDaysIn(atom, year, month, timezone, resolved);
 
       for (const day of days) {
         seen.add(day);
@@ -423,7 +469,12 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
    * day counting the from date as day one, computed arithmetically from
    * the day difference between the first of the month and from.
    */
-  function cycleDaysIn(schedule: YrnkSchedule, interval: number, year: number, month: number): number[] {
+  function cycleDaysIn(
+    schedule: YrnkSchedule,
+    interval: number,
+    year: number,
+    month: number,
+  ): number[] {
     const anchor = anchorOf(schedule);
 
     if (anchor === null) {
@@ -468,7 +519,10 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
     throughDay: Temporal.PlainDate,
   ): boolean {
     for (const day of days) {
-      if (Temporal.PlainDate.compare(afterDay, day) > 0 || Temporal.PlainDate.compare(day, throughDay) > 0) {
+      if (
+        Temporal.PlainDate.compare(afterDay, day) > 0 ||
+        Temporal.PlainDate.compare(day, throughDay) > 0
+      ) {
         continue;
       }
 
@@ -520,9 +574,11 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       if (atomMatches(schedule.shift.condition, cursor, resolved)) {
         // For a strict shift (without or_same), this landing-condition
         // day itself is the last candidate that can fall on date.
-        return !schedule.shift.orSame
-          && isBaseDay(schedule, cursor)
-          && landsOn(schedule.shift, cursor, date);
+        return (
+          !schedule.shift.orSame &&
+          isBaseDay(schedule, cursor) &&
+          landsOn(schedule.shift, cursor, date)
+        );
       }
     }
 
@@ -563,9 +619,10 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
 
   function matchesAnyAtom(schedule: YrnkSchedule, date: Temporal.PlainDate): boolean {
     for (const atom of schedule.days ?? []) {
-      const matched = atom.kind === 'day-cycle'
-        ? matchesCycle(schedule, atom.interval, date)
-        : atomMatches(atom, date, resolved);
+      const matched =
+        atom.kind === 'day-cycle'
+          ? matchesCycle(schedule, atom.interval, date)
+          : atomMatches(atom, date, resolved);
 
       if (matched) {
         return true;
@@ -579,7 +636,11 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
    * The day cycle decision: only days on or after the from date, a
    * multiple of N days away from it, match.
    */
-  function matchesCycle(schedule: YrnkSchedule, interval: number, date: Temporal.PlainDate): boolean {
+  function matchesCycle(
+    schedule: YrnkSchedule,
+    interval: number,
+    date: Temporal.PlainDate,
+  ): boolean {
     const anchor = anchorOf(schedule);
 
     if (anchor === null) {
@@ -602,18 +663,23 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       return true;
     }
 
-    const target = guard.direction === null
-      ? date
-      : addDays(date, guard.direction === 'next' ? 1 : -1, timezone);
+    const target =
+      guard.direction === null
+        ? date
+        : addDays(date, guard.direction === 'next' ? 1 : -1, timezone);
     const result = atomMatches(guard.condition, target, resolved);
 
     return guard.negated ? !result : result;
   }
 
-  function landsOn(shift: YrnkShift, base: Temporal.PlainDate, target: Temporal.PlainDate): boolean {
+  function landsOn(
+    shift: YrnkShift,
+    base: Temporal.PlainDate,
+    target: Temporal.PlainDate,
+  ): boolean {
     const landing = landingOf(shift, base);
 
-    return landing !== null && landing.equals(target);
+    return landing?.equals(target) ?? false;
   }
 
   /**
@@ -627,7 +693,11 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
     const step = shift.direction === 'next' ? 1 : -1;
     let cursor = shift.orSame ? base : addDays(base, step, timezone);
 
-    for (let displacement = shift.orSame ? 0 : 1; displacement <= SHIFT_SEARCH_LIMIT_DAYS; displacement++) {
+    for (
+      let displacement = shift.orSame ? 0 : 1;
+      displacement <= SHIFT_SEARCH_LIMIT_DAYS;
+      displacement++
+    ) {
       if (atomMatches(shift.condition, cursor, resolved)) {
         return cursor;
       }
@@ -758,8 +828,9 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
    */
   function wallOffsetSegments(lo: number, hi: number): (readonly [number, number, number])[] {
     const limitNs = BigInt(hi + WALL_OFFSET_SLACK_SECONDS) * 1_000_000_000n;
-    let cursor = Temporal.Instant.fromEpochMilliseconds((lo - WALL_OFFSET_SLACK_SECONDS) * 1000)
-      .toZonedDateTimeISO(timezone);
+    let cursor = Temporal.Instant.fromEpochMilliseconds(
+      (lo - WALL_OFFSET_SLACK_SECONDS) * 1000,
+    ).toZonedDateTimeISO(timezone);
     const segments: (readonly [number, number, number])[] = [];
     let start = -Infinity;
     let offset = cursor.offsetNanoseconds / 1_000_000_000;

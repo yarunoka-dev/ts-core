@@ -1,5 +1,5 @@
-import { resolveWall } from '../temporal.ts';
 import type { YrnkDayName } from '../model.ts';
+import { resolveWall } from '../temporal.ts';
 
 /**
  * Calendar-day arithmetic on the document's clock. Days are
@@ -15,12 +15,21 @@ export function denote(day: Temporal.PlainDate, timezone: string): Temporal.Plai
 }
 
 /** The denoted day at (year, month, dayOfMonth) on the document's clock. */
-export function dayAt(year: number, month: number, day: number, timezone: string): Temporal.PlainDate {
+export function dayAt(
+  year: number,
+  month: number,
+  day: number,
+  timezone: string,
+): Temporal.PlainDate {
   return denote(new Temporal.PlainDate(year, month, day), timezone);
 }
 
 /** The denoted day n calendar days away. */
-export function addDays(day: Temporal.PlainDate, days: number, timezone: string): Temporal.PlainDate {
+export function addDays(
+  day: Temporal.PlainDate,
+  days: number,
+  timezone: string,
+): Temporal.PlainDate {
   return denote(day.add({ days }), timezone);
 }
 
@@ -41,7 +50,11 @@ export function wallDateOfSec(epochSeconds: number, timezone: string): Temporal.
  * the document's clock like any other wall-clock point (RFC 5545
  * §3.3.5 via 'compatible' disambiguation).
  */
-export function atTime(day: Temporal.PlainDate, secondsFromMidnight: number, timezone: string): Temporal.ZonedDateTime {
+export function atTime(
+  day: Temporal.PlainDate,
+  secondsFromMidnight: number,
+  timezone: string,
+): Temporal.ZonedDateTime {
   return resolveWall(
     day.toPlainDateTime({
       hour: Math.floor(secondsFromMidnight / 3600),
@@ -64,7 +77,7 @@ export function monthIndex(day: Temporal.PlainDate): number {
 
 /** [year, month] at a running month number. */
 export function yearMonthAt(index: number): readonly [number, number] {
-  return [Math.floor(index / 12), ((index % 12) + 12) % 12 + 1];
+  return [Math.floor(index / 12), (((index % 12) + 12) % 12) + 1];
 }
 
 const DAY_NAMES: readonly YrnkDayName[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
