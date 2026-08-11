@@ -30,8 +30,12 @@ const MODIFIER_WORDS: readonly string[] = ['not', 'prev', 'next', 'or_same'];
  * parser.
  */
 export function parseDayExpression(raw: unknown): readonly YrnkDayAtom[] {
-  if (!Array.isArray(raw) || raw.length === 0) {
-    invalid('days must be a non-empty list of atoms (a scalar cannot be written)');
+  if (!Array.isArray(raw)) {
+    invalid('days must be a list of atoms (a scalar cannot be written)');
+  }
+
+  if (raw.length === 0) {
+    invalid('Enumeration of days cannot be empty (omit it for no restriction)');
   }
 
   const atoms = raw.map(

@@ -1,5 +1,4 @@
 import { descriptionProblem, labelProblem } from '../annotations.ts';
-import { YrnkError } from '../error.ts';
 import type { YrnkSchedule, YrnkTimeSpec } from '../model.ts';
 import { isRealDate, resolveWall } from '../temporal.ts';
 import { parseDayExpression, parseIf, parseShift } from './atoms.ts';
@@ -217,7 +216,7 @@ function parseAnnotation(
   const problem = problemWith(value);
 
   if (problem !== null) {
-    throw new YrnkError('invalid-document', problem);
+    invalid(problem);
   }
 
   return value;
