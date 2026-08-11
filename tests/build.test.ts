@@ -103,6 +103,22 @@ describe('build', () => {
     assert.deepEqual(build(parse(doc)), doc);
   });
 
+  it('copies the input arrays instead of aliasing or freezing them', () => {
+    const times = ['10:00'];
+    const years = [2026];
+    const parsed = parse({ version: '1.0', timezone: 'UTC', schedules: [{ years, times }] });
+
+    times.push('11:00');
+    years.push(2027);
+
+    assert.deepEqual(build(parsed), {
+      version: '1.0',
+      timezone: 'UTC',
+      schedules: [{ years: [2026], times: ['10:00'] }],
+    });
+    assert.ok(!Object.isFrozen(times), 'the caller keeps ownership of its arrays');
+  });
+
   it('is JSON-stringifiable as the wire form', () => {
     const doc = { version: '1.0', timezone: 'UTC', schedules: [{ times: ['10:00'] }] };
     const json = JSON.stringify(build(parse(doc)));

@@ -99,7 +99,9 @@ function parseDateList(raw: readonly unknown[], where: string): readonly string[
     seen.add(date);
   }
 
-  return raw as readonly string[];
+  // Copied: the parsed document must not alias (nor later freeze) the
+  // caller's own arrays.
+  return [...raw] as readonly string[];
 }
 
 function parseWorkweek(raw: unknown): readonly YrnkDayName[] {
@@ -127,7 +129,8 @@ function parseWorkweek(raw: unknown): readonly YrnkDayName[] {
     seen.add(day);
   }
 
-  return raw as readonly YrnkDayName[];
+  // Copied for the same reason as parseDateList.
+  return [...raw] as readonly YrnkDayName[];
 }
 
 /**

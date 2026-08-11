@@ -88,7 +88,9 @@ function parseFixedTimes(raw: readonly unknown[]): YrnkTimeSpec {
     seen.add(time);
   }
 
-  return { kind: 'times', times: raw as readonly string[] };
+  // Copied: the parsed document must not alias (nor later freeze) the
+  // caller's own arrays.
+  return { kind: 'times', times: [...raw] as readonly string[] };
 }
 
 function parseGrid(raw: Record<string, unknown>): YrnkTimeSpec {

@@ -222,7 +222,9 @@ function parseResolverDeclarations(raw: Record<string, unknown>): readonly strin
     seen.add(name);
   }
 
-  return value as readonly string[];
+  // Copied: the parsed document must not alias (nor later freeze) the
+  // caller's own arrays.
+  return [...value] as readonly string[];
 }
 
 function parseAnnotation(

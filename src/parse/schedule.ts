@@ -194,7 +194,9 @@ function parseIntAxis(
     seen.add(value);
   }
 
-  return values as readonly number[];
+  // Copied: the parsed document must not alias (nor later freeze) the
+  // caller's own arrays.
+  return [...values] as readonly number[];
 }
 
 function parseAnnotation(
