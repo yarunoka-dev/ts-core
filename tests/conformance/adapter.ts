@@ -10,12 +10,15 @@
 //
 // The queries are per schedule, so the top-level OR is composed here:
 // any for the judgments, a merge for the enumeration.
+import { writeSync } from 'node:fs';
 import process from 'node:process';
 import type { YrnkDocument, YrnkOccurrence, YrnkResolver } from '../../src/index.ts';
 import { build, hasMatchIn, matches, occurrencesIn, parse, YrnkError } from '../../src/index.ts';
 
 function breakage(message: string): never {
-  process.stderr.write(`${message}\n`);
+  // Synchronous: the runner reads stderr through a pipe, and
+  // process.exit does not flush a pending asynchronous write.
+  writeSync(2, `${message}\n`);
   process.exit(1);
 }
 
