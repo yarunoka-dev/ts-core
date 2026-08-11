@@ -31,10 +31,13 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "format": "biome check --write .",
+    "lint": "biome ci .",
     "test": "node --test",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
     "@types/node": "^26.2.0",
     "typescript": "^7.0.2"
   }
