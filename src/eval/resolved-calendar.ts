@@ -1,6 +1,6 @@
 import { YrnkError } from '../error.ts';
 import type { YrnkCalendar, YrnkDateSet, YrnkResolver } from '../model.ts';
-import { timeToSeconds } from '../parse/times.ts';
+import { timeToSeconds, windowEndToSeconds } from '../parse/times.ts';
 import { dateLiteralProblem } from '../temporal.ts';
 import { denote } from './days.ts';
 
@@ -188,11 +188,7 @@ export function createResolvedCalendar(
       }
 
       return calendar.businessHours.map(
-        (window) =>
-          [
-            timeToSeconds(window[0]),
-            window[1] === '24:00' ? 86400 : timeToSeconds(window[1]),
-          ] as const,
+        (window) => [timeToSeconds(window[0]), windowEndToSeconds(window[1])] as const,
       );
     },
   };

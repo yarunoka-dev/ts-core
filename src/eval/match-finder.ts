@@ -1,4 +1,5 @@
 import type { YrnkSchedule, YrnkShift, YrnkTimeUnit } from '../model.ts';
+import { UNIT_SECONDS } from '../parse/times.ts';
 import { resolveWall } from '../temporal.ts';
 import { atomMatches } from './day-matcher.ts';
 import {
@@ -48,8 +49,6 @@ const SHIFT_SEARCH_LIMIT_DAYS = 366;
  * widest offset a zone can apply (UTC−12 to UTC+14).
  */
 const WALL_OFFSET_SLACK_SECONDS = 172800;
-
-const UNIT_SECONDS: Readonly<Record<YrnkTimeUnit, number>> = { hour: 3600, minute: 60, second: 1 };
 
 type Finder = {
   /** matches, with the given instant truncated to whole seconds. */

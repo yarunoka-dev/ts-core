@@ -2,7 +2,7 @@ import type { YrnkCalendar, YrnkDateSet, YrnkDayName } from '../model.ts';
 import { ensureUsableName } from '../names.ts';
 import { dateLiteralProblem } from '../temporal.ts';
 import { ensureKnownKeys, invalid, isPlainObject } from './shared.ts';
-import { parseWindow, timeToSeconds } from './times.ts';
+import { parseWindow, timeToSeconds, windowEndToSeconds } from './times.ts';
 
 const KNOWN_KEYS = [
   'holidays',
@@ -150,13 +150,7 @@ function parseBusinessHours(raw: unknown): readonly (readonly [string, string])[
 
   const windows = raw.map((pair) => parseWindow(pair, 'Elements of business_hours'));
   const sorted = windows
-    .map(
-      (window) =>
-        [
-          timeToSeconds(window[0]),
-          window[1] === '24:00' ? 86400 : timeToSeconds(window[1]),
-        ] as const,
-    )
+    .map((window) => [timeToSeconds(window[0]), windowEndToSeconds(window[1])] as const)
     .sort((a, b) => a[0] - b[0]);
 
   for (let i = 1; i < sorted.length; i++) {

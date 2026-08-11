@@ -3,8 +3,12 @@ import { ensureKnownKeys, invalid, isPlainObject, typeOf } from './shared.ts';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-/** One day's worth in each unit — the grid's cap. */
-const GRID_MAX: Readonly<Record<YrnkTimeUnit, number>> = { hour: 24, minute: 1440, second: 86400 };
+/** Seconds in each unit word of every. */
+export const UNIT_SECONDS: Readonly<Record<YrnkTimeUnit, number>> = {
+  hour: 3600,
+  minute: 60,
+  second: 1,
+};
 
 export function isTimeLiteral(value: string): boolean {
   return TIME_PATTERN.test(value);
@@ -12,6 +16,14 @@ export function isTimeLiteral(value: string): boolean {
 
 export function timeToSeconds(value: string): number {
   return Number(value.slice(0, 2)) * 3600 + Number(value.slice(3, 5)) * 60;
+}
+
+/**
+ * A window end as seconds from midnight — the one position where the
+ * end-of-day token "24:00" (86400) may stand.
+ */
+export function windowEndToSeconds(end: string): number {
+  return end === '24:00' ? 86400 : timeToSeconds(end);
 }
 
 /**
@@ -40,7 +52,7 @@ export function parseWindow(raw: unknown, where: string): readonly [string, stri
   }
 
   const startSeconds = timeToSeconds(start);
-  const endSeconds = end === '24:00' ? 86400 : timeToSeconds(end);
+  const endSeconds = windowEndToSeconds(end);
 
   if (startSeconds >= endSeconds) {
     invalid(
@@ -102,8 +114,11 @@ function parseGrid(raw: Record<string, unknown>): YrnkTimeSpec {
 
   const [amount, unit] = parseEveryTuple(raw.every);
 
-  if (amount > GRID_MAX[unit]) {
-    invalid(`Count of every must be at most ${GRID_MAX[unit]} for the unit ${unit}: ${amount}`);
+  // One day's worth in the unit — the grid's cap.
+  const cap = 86400 / UNIT_SECONDS[unit];
+
+  if (amount > cap) {
+    invalid(`Count of every must be at most ${cap} for the unit ${unit}: ${amount}`);
   }
 
   return {

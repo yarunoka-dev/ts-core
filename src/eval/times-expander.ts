@@ -1,8 +1,6 @@
-import type { YrnkTimeSpec, YrnkTimeUnit } from '../model.ts';
-import { timeToSeconds } from '../parse/times.ts';
+import type { YrnkTimeSpec } from '../model.ts';
+import { timeToSeconds, UNIT_SECONDS, windowEndToSeconds } from '../parse/times.ts';
 import type { ResolvedCalendar } from './resolved-calendar.ts';
-
-const UNIT_SECONDS: Readonly<Record<YrnkTimeUnit, number>> = { hour: 3600, minute: 60, second: 1 };
 
 /**
  * Expansion of times into the scheduled points within one day (seconds
@@ -26,12 +24,7 @@ export function secondsOf(
       ? [[0, 86400]]
       : time.between === 'business_hour'
         ? resolved.businessHourWindows()
-        : [
-            [
-              timeToSeconds(time.between[0]),
-              time.between[1] === '24:00' ? 86400 : timeToSeconds(time.between[1]),
-            ],
-          ];
+        : [[timeToSeconds(time.between[0]), windowEndToSeconds(time.between[1])]];
   const points: number[] = [];
 
   for (const [start, end] of windows) {
