@@ -37,3 +37,7 @@ export class Widget {
 
 /** The version constant. */
 export const VERSION = '1.0';
+
+/** Two declarators in one statement; only SECOND is re-exported. */
+export const FIRST = '1',
+  SECOND = '2';

@@ -28,6 +28,7 @@ import {
   isStringLiteral,
   isTypeAliasDeclaration,
   isVariableStatement,
+  NodeFlags,
   SyntaxKind,
 } from 'typescript/unstable/ast';
 import { API } from 'typescript/unstable/sync';
@@ -90,7 +91,9 @@ export function extractPublicSurface(entry: string): EntryDoc[] {
         continue;
       }
 
-      entries.push(entryDoc(exported.name, exported.declaration, exported.sourceFile, doc));
+      entries.push(
+        entryDoc(exported.name, exported.localName, exported.declaration, exported.sourceFile, doc),
+      );
     }
 
     return entries;
@@ -101,6 +104,7 @@ export function extractPublicSurface(entry: string): EntryDoc[] {
 
 type Exported = {
   readonly name: string;
+  readonly localName: string;
   readonly declaration: TopLevelDeclaration;
   readonly sourceFile: SourceFile;
 };
@@ -147,6 +151,7 @@ function* exportsOf(
 
       yield {
         name: exportedName,
+        localName,
         declaration: declarationNamed(localName, sourceFile),
         sourceFile,
       };
@@ -183,6 +188,7 @@ function declarationNamed(name: string, sourceFile: SourceFile): TopLevelDeclara
 
 function entryDoc(
   name: string,
+  localName: string,
   declaration: TopLevelDeclaration,
   sourceFile: SourceFile,
   doc: string | null,
@@ -190,6 +196,14 @@ function entryDoc(
   const text = sourceFile.text;
   const start = getTokenPosOfNode(declaration, sourceFile);
   const cleanedDoc = doc === null ? '' : cleanDoc(doc);
+
+  // An aliased re-export documents the declaration under the exported
+  // name, so the declared identifier is replaced by position wherever
+  // the declaration text carries it.
+  const renamed = (sliceStart: number, sliceEnd: number, nameNode: Node): string =>
+    text.slice(sliceStart, getTokenPosOfNode(nameNode, sourceFile)) +
+    name +
+    text.slice(nameNode.end, sliceEnd);
 
   if (isFunctionDeclaration(declaration)) {
     if (declaration.name === undefined) {
@@ -207,26 +221,40 @@ function entryDoc(
   }
 
   if (isClassDeclaration(declaration)) {
-    const headerEnd = declaration.heritageClauses?.at(-1)?.end ?? declaration.name?.end;
+    const nameNode = declaration.name;
 
-    if (headerEnd === undefined) {
+    if (nameNode === undefined) {
       throw new Error(`an exported class must be named: ${name}`);
     }
+
+    const headerEnd = declaration.heritageClauses?.at(-1)?.end ?? nameNode.end;
 
     return {
       name,
       kind: 'class',
-      declaration: withoutExport(collapse(text.slice(start, headerEnd))),
+      declaration: withoutExport(collapse(renamed(start, headerEnd, nameNode))),
       doc: cleanedDoc,
       members: [...membersOf(declaration, sourceFile)],
     };
   }
 
   if (isVariableStatement(declaration)) {
+    const declarator = declaration.declarationList.declarations.find(
+      (candidate) => isIdentifier(candidate.name) && candidate.name.text === localName,
+    );
+
+    if (declarator === undefined) {
+      throw new Error(`no declarator named ${localName} in the statement`);
+    }
+
+    const flags = declaration.declarationList.flags;
+    const keyword = flags & NodeFlags.Const ? 'const' : flags & NodeFlags.Let ? 'let' : 'var';
+    const rest = collapse(text.slice(declarator.name.end, declarator.end));
+
     return {
       name,
       kind: 'constant',
-      declaration: withoutExport(collapse(text.slice(start, declaration.end))),
+      declaration: `${keyword} ${name}${rest === '' ? '' : ` ${rest}`}`,
       doc: cleanedDoc,
     };
   }
@@ -234,7 +262,7 @@ function entryDoc(
   return {
     name,
     kind: 'type',
-    declaration: withoutExport(text.slice(start, declaration.end)),
+    declaration: withoutExport(renamed(start, declaration.end, declaration.name)),
     doc: cleanedDoc,
   };
 }

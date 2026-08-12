@@ -20,8 +20,11 @@ function entryNamed(name: string) {
 
 test('collects every non-internal export of the entry point', () => {
   assert.deepEqual(entries.map((candidate) => candidate.name).toSorted(), [
+    'Gadget',
+    'SECOND',
     'Tone',
     'VERSION',
+    'Voice',
     'Widget',
     'WidgetOptions',
     'greet',
@@ -29,6 +32,22 @@ test('collects every non-internal export of the entry point', () => {
     'wide',
     'yell',
   ]);
+});
+
+test('an aliased class renders its declaration under the exported name', () => {
+  const gadget = entryNamed('Gadget');
+
+  assert.equal(gadget.kind, 'class');
+  assert.equal(gadget.declaration, 'class Gadget');
+  assert.deepEqual(gadget.members, entryNamed('Widget').members);
+});
+
+test('an aliased type alias renders its declaration under the exported name', () => {
+  assert.equal(entryNamed('Voice').declaration, "type Voice = 'soft' | 'loud';");
+});
+
+test('a re-export of one declarator picks it alone out of the statement', () => {
+  assert.equal(entryNamed('SECOND').declaration, "const SECOND = '2'");
 });
 
 test('a multiline parameter list collapses into a one-line signature', () => {
