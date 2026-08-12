@@ -59,7 +59,10 @@ JSON.stringify(raw);             // the document text
 again produces the same representation you started from — not an
 equivalent spelling, the same one. The language has no scalar sugar and
 no optional punctuation precisely so that this holds, which is what
-makes it safe to let a UI parse, edit, and write back.
+makes it safe to let a UI parse, edit, and write back. The one
+tolerated redundancy is an empty object: an empty `calendar` or
+`date_sets` says nothing, is accepted, and comes back omitted — nothing
+a document says is lost.
 
 ## Asking queries
 
@@ -156,6 +159,12 @@ what needs them.
 
 A declared name that goes unused is fine. A name cannot be both a
 `date_sets` entry and a declared one.
+
+Not every string can be a name. One that collides with a reserved word
+of the language (the calendar vocabulary, the day and unit words, the
+structural keys — `holidays`, `every`, `from`, …) or that reads as a
+literal (digits only, `HH:MM`, `YYYY-MM-DD`) is rejected wherever a
+name is accepted, `date_sets` keys included.
 
 ## Supplying dates at runtime
 

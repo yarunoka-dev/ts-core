@@ -25,8 +25,9 @@ inside.
 ## Module format
 
 **ESM only.** Browsers load ESM natively, and Node.js 22 and newer can
-`require()` an ESM module from CommonJS code, so CommonJS applications
-on the supported Node.js versions are not excluded.
+`require()` a synchronous ESM module graph — one free of top-level
+`await`, which this package is — from CommonJS code, so CommonJS
+applications on the supported Node.js versions are not excluded.
 
 ## Runtime dependencies
 

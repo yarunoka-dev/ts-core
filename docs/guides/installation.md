@@ -22,7 +22,7 @@ specification on its way to 1.0.0. They are **not intended for use**.
 
 ## The Temporal polyfill
 
-For runtimes without the Temporal API (Safari stable, Node.js 24 and
+For runtimes without the Temporal API (Safari stable, Node.js 25 and
 older), install a polyfill once, in your application:
 
 ```console
