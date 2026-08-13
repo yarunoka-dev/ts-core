@@ -63,7 +63,7 @@ Questions are asked per schedule; the top-level OR of the schedules list is comp
 
 `nameProblem(name: string): string | null`
 
-Why the string cannot be a name, or null when it can. The literal shapes matter for reading, not for tidiness: a date-list position tells its two forms apart by shape, so a date-shaped name would read as a date list of one, and a digits-only name would read as a day of month in the days axis.
+Why the string cannot be a name, or null when it can: at least one non-whitespace character, none of RESERVED_WORDS, and no literal shape (digits only, HH:MM, or YYYY-MM-DD). The literal shapes matter for reading, not for tidiness: a date-list position tells its two forms apart by shape, so a date-shaped name would read as a date list of one, and a digits-only name would read as a day of month in the days axis.
 
 ### occurrencesIn
 
