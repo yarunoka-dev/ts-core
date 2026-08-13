@@ -1,7 +1,7 @@
 // What: rendering extracted entries into the single reference page —
-// fixed section order, alphabetical entries, inline code for functions
-// and constants, fenced blocks for types, member bullets with the first
-// doc paragraph as the summary.
+// fixed section order, alphabetical entries, inline code for one-line
+// declarations, fenced blocks for types and multi-line constants,
+// member bullets with the first doc paragraph as the summary.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { EntryDoc } from '../extract.ts';
@@ -31,6 +31,12 @@ const entries: EntryDoc[] = [
     kind: 'constant',
     declaration: "const VERSION = '1.0'",
     doc: 'The version.',
+  },
+  {
+    name: 'WORDS',
+    kind: 'constant',
+    declaration: "const WORDS: readonly string[] = [\n  'alpha',\n]",
+    doc: 'The words.',
   },
   {
     name: 'Failure',
@@ -80,6 +86,18 @@ test('a type renders its declaration as a fenced block', () => {
   assert.ok(
     page.includes(
       '### Doc\n\n```ts\ntype Doc = {\n  readonly ok: boolean;\n};\n```\n\nA document.\n',
+    ),
+  );
+});
+
+test('a one-line constant renders as inline code', () => {
+  assert.ok(page.includes("### VERSION\n\n`const VERSION = '1.0'`\n\nThe version.\n"));
+});
+
+test('a multi-line constant renders its declaration as a fenced block', () => {
+  assert.ok(
+    page.includes(
+      "### WORDS\n\n```ts\nconst WORDS: readonly string[] = [\n  'alpha',\n]\n```\n\nThe words.\n",
     ),
   );
 });

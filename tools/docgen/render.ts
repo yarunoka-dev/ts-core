@@ -48,8 +48,11 @@ export function render(entries: readonly EntryDoc[]): string {
 function entrySection(entry: EntryDoc): string {
   let section = `\n### ${entry.name}\n\n`;
 
+  // Types always fence; anything else fences once its declaration
+  // spans lines (a one-line spelling inside a fence would read heavier
+  // than the inline code every other entry uses).
   section +=
-    entry.kind === 'type'
+    entry.kind === 'type' || entry.declaration.includes('\n')
       ? `\`\`\`ts\n${entry.declaration}\n\`\`\`\n`
       : `\`${entry.declaration}\`\n`;
 

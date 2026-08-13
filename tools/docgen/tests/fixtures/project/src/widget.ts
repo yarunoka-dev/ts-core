@@ -38,6 +38,13 @@ export class Widget {
 /** The version constant. */
 export const VERSION = '1.0';
 
+/** The word list constant. */
+export const WORDS: readonly string[] = [
+  // The first group
+  'alpha',
+  'beta',
+];
+
 /** Two declarators in one statement; only SECOND is re-exported. */
 export const FIRST = '1',
   SECOND = '2';

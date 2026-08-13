@@ -249,7 +249,21 @@ function entryDoc(
 
     const flags = declaration.declarationList.flags;
     const keyword = flags & NodeFlags.Const ? 'const' : flags & NodeFlags.Let ? 'let' : 'var';
-    const rest = collapse(text.slice(declarator.name.end, declarator.end));
+    const raw = text.slice(declarator.name.end, declarator.end);
+
+    // A declaration spanning lines keeps its spelling whole — folding a
+    // long initializer into one line would bury the very content the
+    // constant is exported to show — and the renderer fences it.
+    if (raw.includes('\n')) {
+      return {
+        name,
+        kind: 'constant',
+        declaration: `${keyword} ${name}${withoutSemicolon(raw)}`,
+        doc: cleanedDoc,
+      };
+    }
+
+    const rest = collapse(raw);
 
     return {
       name,
