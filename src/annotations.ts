@@ -24,10 +24,20 @@ const LABEL_CONTROLS = /[\u0000-\u001F\u007F-\u009F]/u;
 // biome-ignore lint/suspicious/noControlCharactersInRegex: detecting control characters is this expression's whole job
 const DESCRIPTION_CONTROLS = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/u;
 
+/**
+ * Why the string cannot be a label, or null when it can: at least one
+ * non-whitespace character, at most 100 code points, and no control
+ * characters or invisible characters that can spoof what a reader sees.
+ */
 export function labelProblem(value: string): string | null {
   return problemWith('label', value, LABEL_MAX, LABEL_CONTROLS);
 }
 
+/**
+ * Why the string cannot be a description, or null when it can: the
+ * label rules with a 1000 code point cap, and LF permitted as the one
+ * line break.
+ */
 export function descriptionProblem(value: string): string | null {
   return problemWith('description', value, DESCRIPTION_MAX, DESCRIPTION_CONTROLS);
 }

@@ -25,6 +25,7 @@ test('collects every non-internal export of the entry point', () => {
     'Tone',
     'VERSION',
     'Voice',
+    'WORDS',
     'Widget',
     'WidgetOptions',
     'greet',
@@ -103,6 +104,17 @@ test('a constant carries its declaration without the trailing semicolon', () => 
   assert.equal(version.kind, 'constant');
   assert.equal(version.declaration, "const VERSION = '1.0'");
   assert.equal(version.doc, 'The version constant.');
+});
+
+test('a multi-line constant keeps its spelling whole', () => {
+  const words = entryNamed('WORDS');
+
+  assert.equal(words.kind, 'constant');
+  assert.equal(
+    words.declaration,
+    "const WORDS: readonly string[] = [\n  // The first group\n  'alpha',\n  'beta',\n]",
+  );
+  assert.equal(words.doc, 'The word list constant.');
 });
 
 test('a class lists its public non-internal members in source order', () => {
