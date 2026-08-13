@@ -22,8 +22,9 @@ specification on its way to 1.0.0. They are **not intended for use**.
 
 ## The Temporal polyfill
 
-For runtimes without the Temporal API, install a polyfill once, in
-your application:
+Node.js 26 or newer has Temporal built in and needs no polyfill — see
+[Requirements](requirements#runtime). For runtimes without the Temporal
+API, install a polyfill once, in your application:
 
 ```console
 npm install temporal-polyfill
