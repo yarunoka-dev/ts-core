@@ -15,6 +15,18 @@ sidebar:
 
 The mirror image of parse: the typed model back to the document's array-and-object representation (`JSON.stringify` the result for the wire form). Round-tripping is the identity — building a document parsed from the DSL yields the original spelling, structurally.
 
+### dateLiteralProblem
+
+`dateLiteralProblem(value: string): string | null`
+
+Why the string is not a Yrnk date literal, or null when it is. The spelling is zero-padded YYYY-MM-DD, the date must exist in the proleptic Gregorian calendar, and years run 1–9999.
+
+### descriptionProblem
+
+`descriptionProblem(value: string): string | null`
+
+Why the string cannot be a description, or null when it can: the label rules with a 1000 code point cap, and LF permitted as the one line break.
+
 ### ensureResolvable
 
 `ensureResolvable(document: YrnkDocument, schedules?: Iterable<YrnkSchedule>): void`
@@ -27,6 +39,18 @@ Would every name these schedules write be answered by this document's definition
 
 Is there a scheduled point after `after`, through `through`? The substance of a firing decision — "is there a scheduled point after the previous run, through now?" maps onto it directly. A point exactly at `after` does not count (it was the previous judgment's "now", already counted); a point exactly at `through` counts in this judgment. An all-day occurrence counts while its day overlaps the period, however late in the day it is asked: a day is due for as long as it lasts.
 
+### isTimeLiteral
+
+`isTimeLiteral(value: string): boolean`
+
+Whether the string is a time literal: zero-padded HH:MM, 00:00 through 23:59. The end-of-day token "24:00" is not a time literal — it is legal only as a window end.
+
+### labelProblem
+
+`labelProblem(value: string): string | null`
+
+Why the string cannot be a label, or null when it can: at least one non-whitespace character, at most 100 code points, and no control characters or invisible characters that can spoof what a reader sees.
+
 ### matches
 
 `matches(document: YrnkDocument, schedule: YrnkSchedule, at: YrnkInstant): boolean`
@@ -34,6 +58,12 @@ Is there a scheduled point after `after`, through `through`? The substance of a 
 Is the given instant an occurrence of this schedule? For a timed occurrence the answer is instant equality — the given instant, ignoring anything finer than a second (no scheduled point is finer), equals the occurrence's instant. An all-day occurrence matches on the day alone: yes for every instant whose local date, read in the document timezone, is that day.
 
 Questions are asked per schedule; the top-level OR of the schedules list is composed by the caller (any for the judgments, a merge for the enumeration).
+
+### nameProblem
+
+`nameProblem(name: string): string | null`
+
+Why the string cannot be a name, or null when it can. The literal shapes matter for reading, not for tidiness: a date-list position tells its two forms apart by shape, so a date-shaped name would read as a date list of one, and a digits-only name would read as a day of month in the days axis.
 
 ### occurrencesIn
 
@@ -46,6 +76,18 @@ Which occurrences lie from `from` through `through` (both boundary instants incl
 `parse(input: string | unknown, options?: YrnkParseOptions): YrnkDocument`
 
 Parses a Yrnk document (a JSON string or a decoded value) into the typed model. Each schedule is delegated to the schedule parser; what can only be validated with the whole document and its definitions together — resolvability of every name, the data behind the built-in vocabulary, and the declarations the document makes — happens here. The returned document is deeply frozen: the model is data, and the queries trust it not to change underneath them.
+
+### timezoneProblem
+
+`timezoneProblem(timezone: string): string | null`
+
+Why the string cannot be the document timezone, or null when it can. The spec limits timezone to IANA tz database names; Temporal also accepts fixed offsets as time zone identifiers, so those are told apart and rejected here. Backward links (Japan, US/Eastern) are tz database entries and pass.
+
+### windowProblem
+
+`windowProblem(start: string, end: string): string | null`
+
+Why the values cannot be a time window [start, end), or null when they can: start is zero-padded HH:MM, end is HH:MM or the end-of-day token "24:00", and start is strictly before end (a window crossing midnight cannot be written).
 
 ## Classes
 
@@ -62,6 +104,75 @@ Every failure this library reports. `instanceof YrnkError` answers "did Yarunoka
 - `constructor(code: YrnkErrorCode, message: string)`
 
 ## Constants
+
+### RESERVED_WORDS
+
+```ts
+const RESERVED_WORDS: readonly string[] = [
+  // Calendar vocabulary (days) and the window vocabulary
+  'weekday',
+  'weekend',
+  'holiday',
+  'business_day',
+  'business_holiday',
+  'business_hour',
+  // Day names
+  'mon',
+  'tue',
+  'wed',
+  'thu',
+  'fri',
+  'sat',
+  'sun',
+  // Ordinal words
+  '1st',
+  '2nd',
+  '3rd',
+  '4th',
+  '5th',
+  'last',
+  // Special days
+  'last_day_of_month',
+  // Structural words of shift / if
+  'not',
+  'prev',
+  'next',
+  'or_same',
+  // Unit words of every
+  'hour',
+  'minute',
+  'second',
+  'day',
+  // Structural keys of the document, schedules, and calendar
+  'version',
+  'timezone',
+  'resolvers',
+  'calendar',
+  'schedules',
+  'years',
+  'months',
+  'days',
+  'shift',
+  'if',
+  'times',
+  'allday',
+  'every',
+  'between',
+  'from',
+  'until',
+  'holidays',
+  'business_holidays',
+  'business_days',
+  'workweek',
+  'business_hours',
+  'date_sets',
+  // The annotation fields
+  'label',
+  'description',
+]
+```
+
+The words a name must not collide with. Deliberately duplicated content of the name enum in the spec's primitives.schema.json; agreement is verified by a test.
 
 ### SUPPORTED_VERSION
 
