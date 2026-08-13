@@ -11,11 +11,11 @@ The engine does all date-time work through the
 [Temporal API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal)
 (ES2026) and references the global `Temporal` object — it ships no
 polyfill of its own.
+**The requirement is that `Temporal` is available — nothing else.**
 
-- **Node.js 26 or newer** has Temporal built in.
-- **Browsers**: Firefox, Chrome, and Edge ship Temporal natively. For
-  runtimes without it (Safari stable, older Node.js), your application
-  installs a polyfill once — see
+- **Node.js 26 or newer** has it built in.
+- Any runtime without it satisfies the requirement with a polyfill your
+  application installs once — see
   [Installation](installation#the-temporal-polyfill).
 
 When `Temporal` is missing, the first call into the library throws an
