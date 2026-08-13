@@ -10,6 +10,11 @@ export const UNIT_SECONDS: Readonly<Record<YrnkTimeUnit, number>> = {
   second: 1,
 };
 
+/**
+ * Whether the string is a time literal: zero-padded HH:MM, 00:00
+ * through 23:59. The end-of-day token "24:00" is not a time literal —
+ * it is legal only as a window end.
+ */
 export function isTimeLiteral(value: string): boolean {
   return TIME_PATTERN.test(value);
 }
@@ -27,9 +32,30 @@ export function windowEndToSeconds(end: string): number {
 }
 
 /**
- * A window pair [start, end): zero-padded HH:MM with "24:00" allowed
- * only as the end, and start strictly before end (windows crossing
+ * Why the values cannot be a time window [start, end), or null when
+ * they can: start is zero-padded HH:MM, end is HH:MM or the end-of-day
+ * token "24:00", and start is strictly before end (a window crossing
  * midnight cannot be written).
+ */
+export function windowProblem(start: string, end: string): string | null {
+  if (!isTimeLiteral(start)) {
+    return `Time of day must be in HH:MM format (00:00 through 23:59): ${start}`;
+  }
+
+  if (!isTimeLiteral(end) && end !== '24:00') {
+    return `Window end must be in HH:MM format or "24:00": ${end}`;
+  }
+
+  if (timeToSeconds(start) >= windowEndToSeconds(end)) {
+    return `Time window requires start < end (crossing midnight is not supported): [${start}, ${end}]`;
+  }
+
+  return null;
+}
+
+/**
+ * A window pair [start, end): the shape (two strings) here, the values
+ * through windowProblem.
  */
 export function parseWindow(raw: unknown, where: string): readonly [string, string] {
   if (
@@ -42,22 +68,10 @@ export function parseWindow(raw: unknown, where: string): readonly [string, stri
   }
 
   const [start, end] = raw as [string, string];
+  const problem = windowProblem(start, end);
 
-  if (!isTimeLiteral(start)) {
-    invalid(`Time of day must be in HH:MM format (00:00 through 23:59): ${start}`);
-  }
-
-  if (!isTimeLiteral(end) && end !== '24:00') {
-    invalid(`Window end must be in HH:MM format or "24:00": ${end}`);
-  }
-
-  const startSeconds = timeToSeconds(start);
-  const endSeconds = windowEndToSeconds(end);
-
-  if (startSeconds >= endSeconds) {
-    invalid(
-      `Time window requires start < end (crossing midnight is not supported): [${start}, ${end}]`,
-    );
+  if (problem !== null) {
+    invalid(problem);
   }
 
   return [start, end];
