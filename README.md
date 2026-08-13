@@ -58,10 +58,9 @@ The engine does all date-time work through the
 (ES2026) and references the global `Temporal` object — it ships no
 polyfill of its own.
 
-- **Node.js 26 or newer** has Temporal built in.
-- **Browsers**: Firefox, Chrome, and Edge ship Temporal natively. For
-  runtimes without it (Safari stable, older Node.js), install a polyfill
-  in your application once:
+- **Node.js 26 or newer** has it built in.
+- Any runtime without it needs a polyfill, installed in your
+  application once:
 
   ```console
   npm install temporal-polyfill
