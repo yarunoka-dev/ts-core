@@ -70,9 +70,15 @@ describe('version', () => {
     rejects({ ...minimal, version: 1.0 }, 'invalid-document', /version/);
   });
 
+  it('accepts every supported version and keeps the declared one', () => {
+    assert.equal(parse({ ...minimal, version: '1.0' }).version, '1.0');
+    assert.equal(parse({ ...minimal, version: '1.1' }).version, '1.1');
+  });
+
   it('rejects a version this implementation does not know', () => {
+    rejects({ ...minimal, version: '0.9' }, 'unsupported-version');
+    rejects({ ...minimal, version: '1.2' }, 'unsupported-version');
     rejects({ ...minimal, version: '2.0' }, 'unsupported-version');
-    rejects({ ...minimal, version: '1.1' }, 'unsupported-version');
   });
 });
 

@@ -9,8 +9,8 @@ import { parseCalendar } from './calendar.ts';
 import { parseSchedule } from './schedule.ts';
 import { canonicalized, ensureKnownKeys, invalid, isPlainObject, typeOf } from './shared.ts';
 
-/** The spec version this implementation reads. */
-export const SUPPORTED_VERSION = '1.0';
+/** The spec versions this implementation reads, oldest first. */
+export const SUPPORTED_VERSIONS: readonly string[] = ['1.0', '1.1'];
 
 const KNOWN_KEYS = [
   'version',
@@ -126,10 +126,10 @@ function parseVersion(raw: Record<string, unknown>): string {
 
   // The spec requires rejecting a declared version this implementation
   // does not know rather than interpreting it.
-  if (version !== SUPPORTED_VERSION) {
+  if (!SUPPORTED_VERSIONS.includes(version)) {
     throw new YrnkError(
       'unsupported-version',
-      `This implementation supports version ${SUPPORTED_VERSION} only: ${version}`,
+      `This implementation supports versions ${SUPPORTED_VERSIONS.join(', ')} only: ${version}`,
     );
   }
 

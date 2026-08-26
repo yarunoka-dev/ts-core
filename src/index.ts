@@ -22,7 +22,7 @@ export type {
 } from './model.ts';
 export { nameProblem, RESERVED_WORDS } from './names.ts';
 export type { YrnkParseOptions } from './parse/document.ts';
-export { parse, SUPPORTED_VERSION } from './parse/document.ts';
+export { parse, SUPPORTED_VERSIONS } from './parse/document.ts';
 export { isTimeLiteral, windowProblem } from './parse/times.ts';
 export type { YrnkInstant } from './queries.ts';
 export { ensureResolvable, hasMatchIn, matches, occurrencesIn } from './queries.ts';
