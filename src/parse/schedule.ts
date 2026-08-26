@@ -1,5 +1,5 @@
 import { descriptionProblem, labelProblem } from '../annotations.ts';
-import type { YrnkSchedule, YrnkTimeSpec } from '../model.ts';
+import type { YrnkDayAtom, YrnkSchedule, YrnkTimeSpec, YrnkTimeUnit } from '../model.ts';
 import { isRealDate, resolveWall } from '../temporal.ts';
 import { parseDayExpression, parseIf, parseShift } from './atoms.ts';
 import { ensureKnownKeys, invalid, isPlainObject, typeOf } from './shared.ts';
@@ -24,12 +24,27 @@ const KNOWN_KEYS = [
 const BOUNDARY_PATTERN = /^(\d{4})-(\d{2})-(\d{2}) ([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
+ * For each unit of every, the largest count whose second matching day
+ * or point stays inside the date domain when from sits at its lower
+ * end. Every count beyond a bound collapses to the same behavior — the
+ * anchor alone — so 1.1 rejects it, freeing implementations from
+ * huge-number arithmetic.
+ */
+const DAY_CYCLE_MAX_COUNT = 3_652_058;
+
+const SEQUENCE_MAX_COUNT: Readonly<Record<YrnkTimeUnit, number>> = {
+  hour: 87_649_415,
+  minute: 5_258_964_959,
+  second: 315_537_897_599,
+};
+
+/**
  * One element of the DSL's schedules[], parsed and validated as such.
  * That names are not checked for resolvability here is a property of the
  * data, not a limitation: a schedule carries no definitions, so
  * resolving names is the document parser's and the evaluator's job.
  */
-export function parseSchedule(raw: unknown, timezone: string): YrnkSchedule {
+export function parseSchedule(raw: unknown, timezone: string, version: string): YrnkSchedule {
   if (!isPlainObject(raw)) {
     invalid('A schedule must be an object');
   }
@@ -73,6 +88,13 @@ export function parseSchedule(raw: unknown, timezone: string): YrnkSchedule {
     }
   }
 
+  // The count bounds are restrictions 1.1 introduced, binding only
+  // documents that declare the version that introduced them, or a newer
+  // one — never a document declaring 1.0.
+  if (version !== '1.0') {
+    ensureCountsWithinBounds(days, time);
+  }
+
   // The interval every is a sequence of points, not a product of
   // matching days × times, so it does not combine with the date axes and
   // modifiers.
@@ -99,6 +121,25 @@ export function parseSchedule(raw: unknown, timezone: string): YrnkSchedule {
     ...(ifGuard !== undefined ? { if: ifGuard } : {}),
     time,
   };
+}
+
+function ensureCountsWithinBounds(
+  days: readonly YrnkDayAtom[] | undefined,
+  time: YrnkTimeSpec,
+): void {
+  for (const atom of days ?? []) {
+    if (atom.kind === 'day-cycle' && atom.interval > DAY_CYCLE_MAX_COUNT) {
+      invalid(
+        `Count of every must be at most ${DAY_CYCLE_MAX_COUNT} for the unit day: ${atom.interval}`,
+      );
+    }
+  }
+
+  if (time.kind === 'sequence' && time.every[0] > SEQUENCE_MAX_COUNT[time.every[1]]) {
+    invalid(
+      `Count of every must be at most ${SEQUENCE_MAX_COUNT[time.every[1]]} for the unit ${time.every[1]}: ${time.every[0]}`,
+    );
+  }
 }
 
 function parseTimeSpec(raw: Record<string, unknown>): YrnkTimeSpec {

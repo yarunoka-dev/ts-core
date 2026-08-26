@@ -54,7 +54,7 @@ export function parse(input: string | unknown, options?: YrnkParseOptions): Yrnk
   const version = parseVersion(raw);
   const timezone = parseTimezone(raw);
   const calendar = parseCalendar(raw.calendar, version);
-  const schedules = parseSchedules(raw, timezone);
+  const schedules = parseSchedules(raw, timezone, version);
   const resolvers = parseResolverDeclarations(raw);
   const label = parseAnnotation(raw, 'label', labelProblem);
   const description = parseAnnotation(raw, 'description', descriptionProblem);
@@ -161,7 +161,11 @@ function parseTimezone(raw: Record<string, unknown>): string {
   return timezone;
 }
 
-function parseSchedules(raw: Record<string, unknown>, timezone: string): readonly YrnkSchedule[] {
+function parseSchedules(
+  raw: Record<string, unknown>,
+  timezone: string,
+  version: string,
+): readonly YrnkSchedule[] {
   if (!Object.hasOwn(raw, 'schedules')) {
     invalid('schedules is required');
   }
@@ -191,7 +195,7 @@ function parseSchedules(raw: Record<string, unknown>, timezone: string): readonl
     seen.add(key);
   }
 
-  return value.map((schedule) => parseSchedule(schedule, timezone));
+  return value.map((schedule) => parseSchedule(schedule, timezone, version));
 }
 
 function parseResolverDeclarations(raw: Record<string, unknown>): readonly string[] {

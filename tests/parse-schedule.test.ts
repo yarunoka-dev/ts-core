@@ -273,7 +273,7 @@ describe('times', () => {
 });
 
 describe('the interval every', () => {
-  it('parses with its required from and no upper bound', () => {
+  it('parses with its required from', () => {
     const schedule = one({ from: '2026-07-14 00:00', every: [36, 'hour'] });
 
     assert.deepEqual(schedule.time, { kind: 'sequence', every: [36, 'hour'] });
@@ -291,6 +291,49 @@ describe('the interval every', () => {
       { from: '2026-07-14 00:00', every: [1, 'hour'], shift: ['prev', 'mon'] },
       'invalid-document',
     );
+  });
+});
+
+describe('the count bounds', () => {
+  it('accepts each maximum count and rejects one beyond it', () => {
+    // For each unit, the largest count whose second matching day or
+    // point stays inside the date domain when from sits at its lower
+    // end.
+    one({ from: '2026-07-14 00:00', days: [['every', 3652058, 'day']], times: ['03:00'] });
+    rejects(
+      { from: '2026-07-14 00:00', days: [['every', 3652059, 'day']], times: ['03:00'] },
+      'invalid-document',
+      /at most/,
+    );
+    one({ from: '2026-07-14 00:00', every: [87649415, 'hour'] });
+    rejects({ from: '2026-07-14 00:00', every: [87649416, 'hour'] }, 'invalid-document', /at most/);
+    one({ from: '2026-07-14 00:00', every: [5258964959, 'minute'] });
+    rejects(
+      { from: '2026-07-14 00:00', every: [5258964960, 'minute'] },
+      'invalid-document',
+      /at most/,
+    );
+    one({ from: '2026-07-14 00:00', every: [315537897599, 'second'] });
+    rejects(
+      { from: '2026-07-14 00:00', every: [315537897600, 'second'] },
+      'invalid-document',
+      /at most/,
+    );
+  });
+
+  it('leaves the counts of a document declaring 1.0 unbounded', () => {
+    // Validity follows the declared version. Under the closed date
+    // domain an over-bound count means the from day alone.
+    const doc = parse({
+      ...base,
+      version: '1.0',
+      schedules: [
+        { from: '2026-07-14 00:00', days: [['every', 3652059, 'day']], times: ['03:00'] },
+        { from: '2026-07-14 00:00', every: [315537897600, 'second'] },
+      ],
+    });
+
+    assert.equal(doc.schedules.length, 2);
   });
 });
 
