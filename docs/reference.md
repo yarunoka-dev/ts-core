@@ -39,6 +39,8 @@ Would every name these schedules write be answered by this document's definition
 
 Is there a scheduled point after `after`, through `through`? The substance of a firing decision — "is there a scheduled point after the previous run, through now?" maps onto it directly. A point exactly at `after` does not count (it was the previous judgment's "now", already counted); a point exactly at `through` counts in this judgment. An all-day occurrence counts while its day overlaps the period, however late in the day it is asked: a day is due for as long as it lasts.
 
+`after` must not lie after `through`: a reversed period arises only from broken caller state or a clock that moved backwards, and a false would hide exactly that, so it throws a malformed-query error instead. Equal endpoints are legal — (t, t] holds no instant and answers false.
+
 ### isTimeLiteral
 
 `isTimeLiteral(value: string): boolean`
@@ -71,11 +73,15 @@ Why the string cannot be a name, or null when it can: at least one non-whitespac
 
 Which occurrences lie from `from` through `through` (both boundary instants included)? Timed occurrences are answered as Temporal.ZonedDateTime on the document timezone's clock, all-day occurrences as Temporal.PlainDate; the two kinds stay distinct, and the answer is in ascending order. Unlike the period judgment, an enumeration has no previous window: the caller names two instants, and both are part of what it names.
 
+`from` must not lie after `through`: a reversed pair signals broken caller state, and an empty answer would hide it, so it throws a malformed-query error instead. Equal endpoints are legal and answer what stands exactly at that point.
+
 ### parse
 
 `parse(input: string | unknown, options?: YrnkParseOptions): YrnkDocument`
 
 Parses a Yrnk document (a JSON string or a decoded value) into the typed model. Each schedule is delegated to the schedule parser; what can only be validated with the whole document and its definitions together — resolvability of every name, the data behind the built-in vocabulary, and the declarations the document makes — happens here. The returned document is deeply frozen: the model is data, and the queries trust it not to change underneath them.
+
+The language's rejection of duplicate member names is checked on string input only: decoding keeps just the last of equally named members, so a value the caller decoded elsewhere cannot carry the evidence, and the duplicates pass undetected. Hand over the document text where that check matters.
 
 ### timezoneProblem
 
@@ -174,11 +180,11 @@ const RESERVED_WORDS: readonly string[] = [
 
 The words a name must not collide with. Deliberately duplicated content of the name enum in the spec's primitives.schema.json; agreement is verified by a test.
 
-### SUPPORTED_VERSION
+### SUPPORTED_VERSIONS
 
-`const SUPPORTED_VERSION = '1.0'`
+`const SUPPORTED_VERSIONS : readonly string[] = ['1.0', '1.1']`
 
-The spec version this implementation reads.
+The spec versions this implementation reads, oldest first.
 
 ## Types
 
@@ -192,6 +198,14 @@ type YrnkCalendar = {
   readonly workweek?: readonly YrnkDayName[];
   readonly businessHours?: readonly (readonly [string, string])[];
   readonly dateSets: Readonly<Record<string, readonly string[]>>;
+  /**
+   * The document wrote "calendar": {} — a spelling only 1.0 accepts,
+   * meaning the same as omitting the key. A serializer keeps the
+   * declared spelling, so the emptiness has to survive the model.
+   */
+  readonly authoredEmpty?: true;
+  /** The document wrote "date_sets": {} — the same 1.0 spelling. */
+  readonly dateSetsAuthoredEmpty?: true;
 };
 ```
 
@@ -288,6 +302,12 @@ type YrnkErrorCode =
   | 'unregistered-resolver'
   /** A value handed to the API violates its contract */
   | 'invalid-value'
+  /**
+   * A query whose endpoints are reversed. The document is fine; the
+   * question is the side that does not stand — a kind of error distinct
+   * from document invalidity.
+   */
+  | 'malformed-query'
   /** What a resolver returned violates its contract */
   | 'invalid-calendar-data'
   /** A calendar definition required by the vocabulary in use is missing */
