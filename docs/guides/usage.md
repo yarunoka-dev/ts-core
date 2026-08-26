@@ -59,10 +59,11 @@ JSON.stringify(raw);             // the document text
 again produces the same representation you started from — not an
 equivalent spelling, the same one. The language has no scalar sugar and
 no optional punctuation precisely so that this holds, which is what
-makes it safe to let a UI parse, edit, and write back. The one
-tolerated redundancy is an empty object: an empty `calendar` or
-`date_sets` says nothing, is accepted, and comes back omitted — nothing
-a document says is lost.
+makes it safe to let a UI parse, edit, and write back. That includes
+the declared version: reading a 1.0 document and writing it back
+yields a 1.0 document, its authored empty `calendar` or `date_sets` (a
+spelling only 1.0 accepts — 1.1 writes "no definitions" by omitting
+the key) included.
 
 ## Asking queries
 
@@ -99,6 +100,18 @@ boundaries:
 An instant argument takes a `Temporal.Instant`, a
 `Temporal.ZonedDateTime`, a `Date`, or an ISO 8601 string with a UTC
 offset. A zone-name-only string names no moment and is rejected.
+
+Both endpoint-naming queries require **start ≤ end**, compared between
+the instants as given. A reversed pair throws a `YrnkError` with code
+`malformed-query` rather than answering `false` or an empty list: a
+reversed period arises only from broken caller state or a clock that
+moved backwards, and a quiet answer would hide exactly that. Equal
+endpoints are legal.
+
+Evaluation works over the spec's **date domain** — days 0001-01-01
+through 9999-12-31, read on the document timezone's clock. A query is
+answered on its overlap with the domain, and one lying entirely
+outside it answers empty.
 
 An **all-day occurrence is held for as long as its day lasts**: any
 question whose range touches the day answers for it, including one asked
@@ -137,7 +150,7 @@ A document declares the names it leaves outside itself:
 
 ```json
 {
-  "version": "1.0",
+  "version": "1.1",
   "timezone": "Asia/Tokyo",
   "resolvers": ["company-holidays"],
   "calendar": {
@@ -224,11 +237,12 @@ try {
 `instanceof YrnkError` answers "did Yarunoka reject this", and `code`
 answers what kind of rejection it was — a document problem
 (`invalid-document`, `unsupported-version`, `reserved-name`,
-`undefined-name`), a wiring problem (`unregistered-resolver`), or a
-value handed to the API or returned by a resolver that violates its
-contract (`invalid-value`, `invalid-calendar-data`,
-`missing-calendar-data`). The reference lists every code with what
-raises it.
+`undefined-name`), a wiring problem (`unregistered-resolver`), a
+question that does not stand (`malformed-query` — a reversed period or
+enumeration; the document is fine), or a value handed to the API or
+returned by a resolver that violates its contract (`invalid-value`,
+`invalid-calendar-data`, `missing-calendar-data`). The reference lists
+every code with what raises it.
 
 Environment problems are the one exception: a missing `Temporal` is
 thrown as a plain `Error`, because it is breakage of the runtime the

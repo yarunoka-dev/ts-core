@@ -6,11 +6,12 @@ import { nameProblem } from '../names.ts';
 import { ensureReferencesResolvable, namesUsedIn } from '../references.ts';
 import { ensureTemporal, timezoneProblem } from '../temporal.ts';
 import { parseCalendar } from './calendar.ts';
+import { ensureNoDuplicateMembers } from './member-scan.ts';
 import { parseSchedule } from './schedule.ts';
 import { canonicalized, ensureKnownKeys, invalid, isPlainObject, typeOf } from './shared.ts';
 
-/** The spec version this implementation reads. */
-export const SUPPORTED_VERSION = '1.0';
+/** The spec versions this implementation reads, oldest first. */
+export const SUPPORTED_VERSIONS: readonly string[] = ['1.0', '1.1'];
 
 const KNOWN_KEYS = [
   'version',
@@ -35,6 +36,12 @@ export type YrnkParseOptions = {
  * vocabulary, and the declarations the document makes — happens here.
  * The returned document is deeply frozen: the model is data, and the
  * queries trust it not to change underneath them.
+ *
+ * The language's rejection of duplicate member names is checked on
+ * string input only: decoding keeps just the last of equally named
+ * members, so a value the caller decoded elsewhere cannot carry the
+ * evidence, and the duplicates pass undetected. Hand over the document
+ * text where that check matters.
  */
 export function parse(input: string | unknown, options?: YrnkParseOptions): YrnkDocument {
   ensureTemporal();
@@ -46,8 +53,8 @@ export function parse(input: string | unknown, options?: YrnkParseOptions): Yrnk
   const bindings = collectBindings(options?.resolvers);
   const version = parseVersion(raw);
   const timezone = parseTimezone(raw);
-  const calendar = parseCalendar(raw.calendar);
-  const schedules = parseSchedules(raw, timezone);
+  const calendar = parseCalendar(raw.calendar, version);
+  const schedules = parseSchedules(raw, timezone, version);
   const resolvers = parseResolverDeclarations(raw);
   const label = parseAnnotation(raw, 'label', labelProblem);
   const description = parseAnnotation(raw, 'description', descriptionProblem);
@@ -82,6 +89,8 @@ function decode(input: string | unknown): Record<string, unknown> {
     } catch {
       invalid('A Yrnk document must be valid JSON');
     }
+
+    ensureNoDuplicateMembers(input);
   }
 
   if (!isPlainObject(value)) {
@@ -126,10 +135,10 @@ function parseVersion(raw: Record<string, unknown>): string {
 
   // The spec requires rejecting a declared version this implementation
   // does not know rather than interpreting it.
-  if (version !== SUPPORTED_VERSION) {
+  if (!SUPPORTED_VERSIONS.includes(version)) {
     throw new YrnkError(
       'unsupported-version',
-      `This implementation supports version ${SUPPORTED_VERSION} only: ${version}`,
+      `This implementation supports versions ${SUPPORTED_VERSIONS.join(', ')} only: ${version}`,
     );
   }
 
@@ -152,7 +161,11 @@ function parseTimezone(raw: Record<string, unknown>): string {
   return timezone;
 }
 
-function parseSchedules(raw: Record<string, unknown>, timezone: string): readonly YrnkSchedule[] {
+function parseSchedules(
+  raw: Record<string, unknown>,
+  timezone: string,
+  version: string,
+): readonly YrnkSchedule[] {
   if (!Object.hasOwn(raw, 'schedules')) {
     invalid('schedules is required');
   }
@@ -182,7 +195,7 @@ function parseSchedules(raw: Record<string, unknown>, timezone: string): readonl
     seen.add(key);
   }
 
-  return value.map((schedule) => parseSchedule(schedule, timezone));
+  return value.map((schedule) => parseSchedule(schedule, timezone, version));
 }
 
 function parseResolverDeclarations(raw: Record<string, unknown>): readonly string[] {

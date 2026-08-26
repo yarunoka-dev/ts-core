@@ -8,7 +8,7 @@ import { YrnkError } from '../src/error.ts';
 import { parse } from '../src/index.ts';
 
 const minimal = {
-  version: '1.0',
+  version: '1.1',
   timezone: 'Asia/Tokyo',
   schedules: [{ times: ['10:00'] }],
 };
@@ -33,7 +33,7 @@ describe('parse input forms', () => {
   it('parses a decoded object', () => {
     const doc = parse(minimal);
 
-    assert.equal(doc.version, '1.0');
+    assert.equal(doc.version, '1.1');
     assert.equal(doc.timezone, 'Asia/Tokyo');
     assert.deepEqual(doc.resolvers, []);
     assert.deepEqual(doc.calendar.dateSets, {});
@@ -70,9 +70,67 @@ describe('version', () => {
     rejects({ ...minimal, version: 1.0 }, 'invalid-document', /version/);
   });
 
+  it('accepts every supported version and keeps the declared one', () => {
+    assert.equal(parse({ ...minimal, version: '1.0' }).version, '1.0');
+    assert.equal(parse({ ...minimal, version: '1.1' }).version, '1.1');
+  });
+
   it('rejects a version this implementation does not know', () => {
+    rejects({ ...minimal, version: '0.9' }, 'unsupported-version');
+    rejects({ ...minimal, version: '1.2' }, 'unsupported-version');
     rejects({ ...minimal, version: '2.0' }, 'unsupported-version');
-    rejects({ ...minimal, version: '1.1' }, 'unsupported-version');
+  });
+});
+
+describe('duplicate member names', () => {
+  it('rejects a duplicate member in the document object', () => {
+    rejects(
+      '{"version":"1.1","timezone":"Asia/Tokyo","timezone":"UTC","schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('rejects a duplicate member in nested objects', () => {
+    rejects(
+      '{"version":"1.1","timezone":"UTC","calendar":{"holidays":[],"holidays":[]},"schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+    rejects(
+      '{"version":"1.1","timezone":"UTC","schedules":[{"times":["10:00"],"times":["11:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+    rejects(
+      '{"version":"1.1","timezone":"UTC","calendar":{"date_sets":{"closures":[],"closures":[]}},"schedules":[{"days":["closures"],"allday":true}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('compares names after escape resolution', () => {
+    rejects(
+      '{"version":"1.1","timezone":"Asia/Tokyo","\\u0074imezone":"UTC","schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('rejects a duplicate in a document declaring 1.0 too', () => {
+    rejects(
+      '{"version":"1.0","timezone":"Asia/Tokyo","timezone":"UTC","schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('allows the same name in different objects', () => {
+    const doc = parse(
+      '{"version":"1.1","timezone":"UTC","schedules":[{"label":"a","times":["10:00"]},{"label":"b","times":["11:00"]}]}',
+    );
+
+    assert.equal(doc.schedules.length, 2);
   });
 });
 

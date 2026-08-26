@@ -40,7 +40,7 @@ roughly "so, do we do it?". That is the question this engine exists to
 answer.
 
 The DSL is language-independent and specified in the
-[spec repository](https://github.com/yarunoka-dev/spec/tree/1.0). This
+[spec repository](https://github.com/yarunoka-dev/spec/tree/1.1). This
 package is its TypeScript implementation.
 
 ## Installation

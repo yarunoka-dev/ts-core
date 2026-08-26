@@ -44,7 +44,7 @@ the application knows which environments it runs in.
 import { parse } from '@yarunoka/core';
 
 const document = parse({
-  version: '1.0',
+  version: '1.1',
   timezone: 'Asia/Tokyo',
   schedules: [{ days: [25], times: ['10:00'] }],
 });

@@ -17,6 +17,12 @@ export type YrnkErrorCode =
   | 'unregistered-resolver'
   /** A value handed to the API violates its contract */
   | 'invalid-value'
+  /**
+   * A query whose endpoints are reversed. The document is fine; the
+   * question is the side that does not stand — a kind of error distinct
+   * from document invalidity.
+   */
+  | 'malformed-query'
   /** What a resolver returned violates its contract */
   | 'invalid-calendar-data'
   /** A calendar definition required by the vocabulary in use is missing */

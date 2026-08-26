@@ -155,10 +155,11 @@ function parseBetween(raw: unknown): readonly [string, string] | 'business_hour'
 }
 
 /**
- * The interval every directly on a schedule. Unlike the times grid the
- * count has no upper bound (a from-anchored sequence keeps counting
- * across days, so a one-day cap would be meaningless); the unit "day"
- * belongs to the date-axis day cycle instead.
+ * The interval every directly on a schedule. The grid's one-day cap
+ * does not apply (a from-anchored sequence keeps counting across days);
+ * what bounds the count is the date domain, a per-version rule checked
+ * at the schedule level. The unit "day" belongs to the date-axis day
+ * cycle instead.
  */
 export function parseSequenceEvery(raw: unknown): YrnkTimeSpec {
   if (Array.isArray(raw) && raw[1] === 'day') {

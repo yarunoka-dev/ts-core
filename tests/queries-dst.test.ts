@@ -13,7 +13,7 @@ function doc(
   calendar?: Record<string, unknown>,
 ) {
   return parse({
-    version: '1.0',
+    version: '1.1',
     timezone,
     ...(calendar ? { calendar } : {}),
     schedules: [schedule],

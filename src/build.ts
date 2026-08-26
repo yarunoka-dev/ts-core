@@ -38,7 +38,9 @@ export function build(document: YrnkDocument): Record<string, unknown> {
 
   const calendar = buildCalendar(document.calendar);
 
-  if (Object.keys(calendar).length > 0) {
+  // The authored "calendar": {} of a 1.0 document comes back as itself:
+  // a serializer keeps the declared spelling.
+  if (Object.keys(calendar).length > 0 || document.calendar.authoredEmpty) {
     raw.calendar = calendar;
   }
 
@@ -75,6 +77,8 @@ function buildCalendar(calendar: YrnkCalendar): Raw {
     raw.date_sets = Object.fromEntries(
       Object.entries(calendar.dateSets).map(([name, dates]) => [name, [...dates]]),
     );
+  } else if (calendar.dateSetsAuthoredEmpty) {
+    raw.date_sets = {};
   }
 
   return raw;

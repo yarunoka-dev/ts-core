@@ -127,6 +127,14 @@ export type YrnkCalendar = {
   readonly workweek?: readonly YrnkDayName[];
   readonly businessHours?: readonly (readonly [string, string])[];
   readonly dateSets: Readonly<Record<string, readonly string[]>>;
+  /**
+   * The document wrote "calendar": {} — a spelling only 1.0 accepts,
+   * meaning the same as omitting the key. A serializer keeps the
+   * declared spelling, so the emptiness has to survive the model.
+   */
+  readonly authoredEmpty?: true;
+  /** The document wrote "date_sets": {} — the same 1.0 spelling. */
+  readonly dateSetsAuthoredEmpty?: true;
 };
 
 declare const parsedDocument: unique symbol;

@@ -7,7 +7,7 @@ import { YrnkError } from '../src/error.ts';
 import { parse } from '../src/index.ts';
 
 const base = {
-  version: '1.0',
+  version: '1.1',
   timezone: 'Asia/Tokyo',
   schedules: [{ times: ['10:00'] }],
 };
@@ -35,12 +35,26 @@ describe('calendar structure', () => {
     rejects({ ...base, calendar: { holiday: [] } }, 'invalid-document', /holiday/);
   });
 
-  it('parses an empty calendar as all-undefined', () => {
-    const doc = parse({ ...base, calendar: {} });
+  it('rejects an empty calendar object', () => {
+    rejects({ ...base, calendar: {} }, 'invalid-document', /calendar/);
+  });
+
+  it('rejects an empty date_sets object', () => {
+    rejects({ ...base, calendar: { date_sets: {} } }, 'invalid-document', /date_sets/);
+  });
+
+  it('parses the empty objects of a 1.0 document as all-undefined', () => {
+    // Validity follows the declared version: the 1.1 restriction never
+    // rejects a document declaring 1.0.
+    const doc = parse({ ...base, version: '1.0', calendar: {} });
 
     assert.equal(doc.calendar.holidays, undefined);
     assert.equal(doc.calendar.workweek, undefined);
     assert.deepEqual(doc.calendar.dateSets, {});
+
+    const nested = parse({ ...base, version: '1.0', calendar: { date_sets: {} } });
+
+    assert.deepEqual(nested.calendar.dateSets, {});
   });
 });
 
@@ -184,7 +198,7 @@ describe('date_sets', () => {
     // Through JSON, as a real document arrives — a JS object literal
     // would itself send __proto__ to the prototype slot.
     const doc = parse(
-      '{"version":"1.0","timezone":"Asia/Tokyo","calendar":{"date_sets":{"__proto__":["2026-10-01"]}},"schedules":[{"days":["__proto__"],"allday":true}]}',
+      '{"version":"1.1","timezone":"Asia/Tokyo","calendar":{"date_sets":{"__proto__":["2026-10-01"]}},"schedules":[{"days":["__proto__"],"allday":true}]}',
     );
 
     assert.ok(Object.hasOwn(doc.calendar.dateSets, '__proto__'));
