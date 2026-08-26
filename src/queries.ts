@@ -40,6 +40,12 @@ export function matches(document: YrnkDocument, schedule: YrnkSchedule, at: Yrnk
  * counted); a point exactly at `through` counts in this judgment. An
  * all-day occurrence counts while its day overlaps the period, however
  * late in the day it is asked: a day is due for as long as it lasts.
+ *
+ * `after` must not lie after `through`: a reversed period arises only
+ * from broken caller state or a clock that moved backwards, and a false
+ * would hide exactly that, so it throws a malformed-query error
+ * instead. Equal endpoints are legal — (t, t] holds no instant and
+ * answers false.
  */
 export function hasMatchIn(
   document: YrnkDocument,
@@ -50,13 +56,14 @@ export function hasMatchIn(
   ensureTemporal();
   ensureResolvable(document, [schedule]);
 
+  const afterNs = toEpochNs(after, 'after');
+  const throughNs = toEpochNs(through, 'through');
+
+  ensureOrdered(afterNs, throughNs, 'period', 'after');
+
   // Points are whole seconds: (after, through] on instants is the
   // integer range [floor(after) + 1, floor(through)].
-  return finderFor(document).hasPointIn(
-    schedule,
-    floorSec(toEpochNs(after, 'after')) + 1,
-    floorSec(toEpochNs(through, 'through')),
-  );
+  return finderFor(document).hasPointIn(schedule, floorSec(afterNs) + 1, floorSec(throughNs));
 }
 
 /**
@@ -67,6 +74,11 @@ export function hasMatchIn(
  * the answer is in ascending order. Unlike the period judgment, an
  * enumeration has no previous window: the caller names two instants, and
  * both are part of what it names.
+ *
+ * `from` must not lie after `through`: a reversed pair signals broken
+ * caller state, and an empty answer would hide it, so it throws a
+ * malformed-query error instead. Equal endpoints are legal and answer
+ * what stands exactly at that point.
  */
 export function occurrencesIn(
   document: YrnkDocument,
@@ -80,9 +92,7 @@ export function occurrencesIn(
   const fromNs = toEpochNs(from, 'from');
   const throughNs = toEpochNs(through, 'through');
 
-  if (fromNs > throughNs) {
-    return [];
-  }
+  ensureOrdered(fromNs, throughNs, 'enumeration', 'from');
 
   // Timed points are compared inclusively on whole seconds (ceil the
   // start, floor the end); an all-day occurrence overlaps the range from
@@ -111,6 +121,20 @@ export function ensureResolvable(document: YrnkDocument, schedules?: Iterable<Yr
     document.calendar,
     bindingsOf(document),
   );
+}
+
+/**
+ * The query well-formedness rule: both endpoint-naming queries require
+ * start ≤ end, compared between the instants as given — nothing is
+ * rounded, and the check runs before the endpoints are cut to anything.
+ */
+function ensureOrdered(startNs: bigint, endNs: bigint, what: string, startName: string): void {
+  if (startNs > endNs) {
+    throw new YrnkError(
+      'malformed-query',
+      `Malformed ${what}: ${startName} must not lie after through`,
+    );
+  }
 }
 
 function finderFor(document: YrnkDocument) {

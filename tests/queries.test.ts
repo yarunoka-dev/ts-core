@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { hasMatchIn, matches, occurrencesIn, parse } from '../src/index.ts';
+import { hasMatchIn, matches, occurrencesIn, parse, YrnkError } from '../src/index.ts';
 
 function doc(schedule: Record<string, unknown>, calendar?: Record<string, unknown>) {
   return parse({
@@ -442,16 +442,14 @@ describe('hasMatchIn', () => {
     );
   });
 
-  it('answers an empty or inverted period with no', () => {
+  it('answers an equal-endpoint period with no', () => {
+    // Zero width is reached by the normal period contract — each
+    // judgment's "now" is the next one's start — so it is legal, and
+    // (t, t] holds no instant.
     const d = doc({ times: { every: [1, 'second'] } });
-    const schedule = d.schedules[0]!;
 
     assert.equal(
-      hasMatchIn(d, schedule, '2026-07-25T10:00:00+09:00', '2026-07-25T10:00:00+09:00'),
-      false,
-    );
-    assert.equal(
-      hasMatchIn(d, schedule, '2026-07-25T10:00:01+09:00', '2026-07-25T10:00:00+09:00'),
+      hasMatchIn(d, d.schedules[0]!, '2026-07-25T10:00:00+09:00', '2026-07-25T10:00:00+09:00'),
       false,
     );
   });
@@ -613,5 +611,64 @@ describe('the interval every', () => {
       hasMatchIn(d, d.schedules[0]!, '2043-06-15T00:00:00+09:00', '2043-06-15T00:00:01+09:00'),
       true,
     );
+  });
+});
+
+describe('query well-formedness', () => {
+  function malformed(ask: () => unknown): void {
+    assert.throws(ask, (error: unknown) => {
+      assert.ok(error instanceof YrnkError, `expected YrnkError, got ${String(error)}`);
+      assert.equal(error.code, 'malformed-query');
+
+      return true;
+    });
+  }
+
+  it('rejects a reversed period as a malformed query', () => {
+    const d = doc({ times: { every: [1, 'second'] } });
+
+    malformed(() =>
+      hasMatchIn(d, d.schedules[0]!, '2026-07-25T10:00:01+09:00', '2026-07-25T10:00:00+09:00'),
+    );
+  });
+
+  it('rejects a reversed enumeration as a malformed query', () => {
+    const d = doc({ times: { every: [1, 'second'] } });
+
+    malformed(() =>
+      occurrencesIn(d, d.schedules[0]!, '2026-07-25T10:00:01+09:00', '2026-07-25T10:00:00+09:00'),
+    );
+  });
+
+  it('compares the endpoints as given, finer than a second', () => {
+    // Nothing is rounded before the check: a pair reversed only in its
+    // fractional seconds is reversed.
+    const d = doc({ times: { every: [1, 'second'] } });
+
+    malformed(() =>
+      hasMatchIn(
+        d,
+        d.schedules[0]!,
+        '2026-07-25T10:00:00.750+09:00',
+        '2026-07-25T10:00:00.250+09:00',
+      ),
+    );
+  });
+
+  it('answers an equal-endpoint enumeration with what stands at the point', () => {
+    const d = parse({
+      version: '1.1',
+      timezone: 'Asia/Tokyo',
+      schedules: [
+        { days: [25], times: ['10:00'] },
+        { days: [25], allday: true },
+      ],
+    });
+    const timed = d.schedules[0]!;
+    const allday = d.schedules[1]!;
+    const at = '2026-07-25T10:00:00+09:00';
+
+    assert.deepEqual(strings(occurrencesIn(d, timed, at, at)), ['2026-07-25T10:00:00+09:00']);
+    assert.deepEqual(strings(occurrencesIn(d, allday, at, at)), ['2026-07-25']);
   });
 });
