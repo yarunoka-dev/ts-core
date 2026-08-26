@@ -6,6 +6,7 @@ import { nameProblem } from '../names.ts';
 import { ensureReferencesResolvable, namesUsedIn } from '../references.ts';
 import { ensureTemporal, timezoneProblem } from '../temporal.ts';
 import { parseCalendar } from './calendar.ts';
+import { ensureNoDuplicateMembers } from './member-scan.ts';
 import { parseSchedule } from './schedule.ts';
 import { canonicalized, ensureKnownKeys, invalid, isPlainObject, typeOf } from './shared.ts';
 
@@ -35,6 +36,12 @@ export type YrnkParseOptions = {
  * vocabulary, and the declarations the document makes — happens here.
  * The returned document is deeply frozen: the model is data, and the
  * queries trust it not to change underneath them.
+ *
+ * The language's rejection of duplicate member names is checked on
+ * string input only: decoding keeps just the last of equally named
+ * members, so a value the caller decoded elsewhere cannot carry the
+ * evidence, and the duplicates pass undetected. Hand over the document
+ * text where that check matters.
  */
 export function parse(input: string | unknown, options?: YrnkParseOptions): YrnkDocument {
   ensureTemporal();
@@ -82,6 +89,8 @@ function decode(input: string | unknown): Record<string, unknown> {
     } catch {
       invalid('A Yrnk document must be valid JSON');
     }
+
+    ensureNoDuplicateMembers(input);
   }
 
   if (!isPlainObject(value)) {

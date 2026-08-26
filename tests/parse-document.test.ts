@@ -82,6 +82,58 @@ describe('version', () => {
   });
 });
 
+describe('duplicate member names', () => {
+  it('rejects a duplicate member in the document object', () => {
+    rejects(
+      '{"version":"1.1","timezone":"Asia/Tokyo","timezone":"UTC","schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('rejects a duplicate member in nested objects', () => {
+    rejects(
+      '{"version":"1.1","timezone":"UTC","calendar":{"holidays":[],"holidays":[]},"schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+    rejects(
+      '{"version":"1.1","timezone":"UTC","schedules":[{"times":["10:00"],"times":["11:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+    rejects(
+      '{"version":"1.1","timezone":"UTC","calendar":{"date_sets":{"closures":[],"closures":[]}},"schedules":[{"days":["closures"],"allday":true}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('compares names after escape resolution', () => {
+    rejects(
+      '{"version":"1.1","timezone":"Asia/Tokyo","\\u0074imezone":"UTC","schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('rejects a duplicate in a document declaring 1.0 too', () => {
+    rejects(
+      '{"version":"1.0","timezone":"Asia/Tokyo","timezone":"UTC","schedules":[{"times":["10:00"]}]}',
+      'invalid-document',
+      /[Dd]uplicate member/,
+    );
+  });
+
+  it('allows the same name in different objects', () => {
+    const doc = parse(
+      '{"version":"1.1","timezone":"UTC","schedules":[{"label":"a","times":["10:00"]},{"label":"b","times":["11:00"]}]}',
+    );
+
+    assert.equal(doc.schedules.length, 2);
+  });
+});
+
 describe('timezone', () => {
   it('accepts IANA names including UTC and backward links', () => {
     assert.equal(parse({ ...minimal, timezone: 'UTC' }).timezone, 'UTC');
