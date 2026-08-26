@@ -8,6 +8,7 @@ import {
   dayAt,
   daysBetween,
   epochSecOf,
+  inDomain,
   monthIndex,
   wallDateOfSec,
   yearMonthAt,
@@ -30,10 +31,12 @@ import { secondsOf } from './times-expander.ts';
  *
  * Instants are handled as whole epoch seconds (no scheduled point is
  * finer); days as denoted Temporal.PlainDate values. from / until (the
- * validity range) folds into the range the question names. The interval
- * every is evaluated on a dedicated arithmetic path that skips the day
- * hierarchy; the day cycle counts from the schedule's from, so it is
- * matched here rather than in the context-free matcher.
+ * validity range) and the date domain (0001-01-01 through 9999-12-31,
+ * at whose edges evaluation ends rather than fails) fold into the range
+ * the question names. The interval every is evaluated on a dedicated
+ * arithmetic path that skips the day hierarchy; the day cycle counts
+ * from the schedule's from, so it is matched here rather than in the
+ * context-free matcher.
  */
 
 /**
@@ -69,6 +72,17 @@ type Finder = {
 };
 
 export function createFinder(timezone: string, resolved: ResolvedCalendar): Finder {
+  // The date domain on the instant axis: the bounds of the cut are the
+  // instants of 0001-01-01 00:00 and 10000-01-01 00:00 on the document
+  // timezone's clock, so an occurrence whose instant exceeds the domain
+  // by the zone offset is not lost — the bound is on the day. Every
+  // query range folds onto [domainLoSec, domainHiSec], the same way the
+  // validity range folds, which is what answers a query lying entirely
+  // outside the domain with empty rather than an error.
+  const domainLoSec = epochSecOf(resolveWall(new Temporal.PlainDateTime(1, 1, 1), timezone));
+  const domainHiSec =
+    epochSecOf(resolveWall(new Temporal.PlainDateTime(10000, 1, 1), timezone)) - 1;
+
   /** The validity range as whole seconds: points live in [fromSec, untilSec − 1]. */
   function boundsOf(schedule: YrnkSchedule): { fromSec: number; untilSec: number } {
     return {
@@ -96,6 +110,12 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
 
     const day = wallDateOfSec(atSec, timezone);
 
+    // The day of every occurrence lies in the domain, so an instant
+    // whose day falls outside it matches nothing.
+    if (!inDomain(day)) {
+      return false;
+    }
+
     if (!dayMatches(schedule, day) && !vanishedDayLandsOn(schedule, day)) {
       return false;
     }
@@ -122,10 +142,11 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
   }
 
   function hasPointIn(schedule: YrnkSchedule, lo: number, hi: number): boolean {
-    // Fold the validity range [from, until) into the period.
+    // Fold the validity range [from, until) and the date domain into
+    // the period.
     const { fromSec, untilSec } = boundsOf(schedule);
-    const lower = Math.max(lo, fromSec);
-    const upper = Math.min(hi, untilSec - 1);
+    const lower = Math.max(lo, fromSec, domainLoSec);
+    const upper = Math.min(hi, untilSec - 1, domainHiSec);
 
     if (lower > upper) {
       return false;
@@ -188,9 +209,9 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
     hi: number,
   ): (Temporal.PlainDate | Temporal.ZonedDateTime)[] {
     const { fromSec, untilSec } = boundsOf(schedule);
-    const lowerTimed = Math.max(loTimed, fromSec);
-    const lowerAllday = Math.max(loAllday, fromSec);
-    const upper = Math.min(hi, untilSec - 1);
+    const lowerTimed = Math.max(loTimed, fromSec, domainLoSec);
+    const lowerAllday = Math.max(loAllday, fromSec, domainLoSec);
+    const upper = Math.min(hi, untilSec - 1, domainHiSec);
 
     if (schedule.time.kind === 'sequence') {
       return sequenceOccurrencesIn(schedule, schedule.time.every, lowerTimed, upper);
@@ -396,6 +417,13 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
    * Consecutive base days collapse into the same landing day.
    */
   function landedDaysIn(schedule: YrnkSchedule, year: number, month: number): Temporal.PlainDate[] {
+    // Days outside the date domain do not exist, so no month outside it
+    // holds base days — the month walks stop finding anything at the
+    // edges rather than conjuring year-0 or year-10000 days.
+    if (year < 1 || year > 9999) {
+      return [];
+    }
+
     if (schedule.years !== undefined && !schedule.years.includes(year)) {
       return [];
     }
@@ -570,6 +598,12 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
 
       cursor = addDays(cursor, step, timezone);
 
+      // Base days outside the date domain do not exist, so the
+      // candidate walk ends at its edge.
+      if (!inDomain(cursor)) {
+        return false;
+      }
+
       if (atomMatches(schedule.shift.condition, cursor, resolved)) {
         // For a strict shift (without or_same), this landing-condition
         // day itself is the last candidate that can fall on date.
@@ -666,6 +700,14 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       guard.direction === null
         ? date
         : addDays(date, guard.direction === 'next' ? 1 : -1, timezone);
+
+    // A neighbour outside the date domain fails the whole guard, and it
+    // fails before not applies — "no such day" is not a falsehood for
+    // not to turn into a match.
+    if (!inDomain(target)) {
+      return false;
+    }
+
     const result = atomMatches(guard.condition, target, resolved);
 
     return guard.negated ? !result : result;
@@ -697,6 +739,13 @@ export function createFinder(timezone: string, resolved: ResolvedCalendar): Find
       displacement <= SHIFT_SEARCH_LIMIT_DAYS;
       displacement++
     ) {
+      // The edge of the date domain bounds the search the same way the
+      // 366-day cap does: a search that would leave it stops with no
+      // landing.
+      if (!inDomain(cursor)) {
+        return null;
+      }
+
       if (atomMatches(shift.condition, cursor, resolved)) {
         return cursor;
       }

@@ -38,6 +38,16 @@ export function daysBetween(from: Temporal.PlainDate, to: Temporal.PlainDate): n
   return from.until(to, { largestUnit: 'days' }).days;
 }
 
+/**
+ * Whether the day lies in the date domain (0001-01-01 through
+ * 9999-12-31) — the closed set of days evaluation works over. Temporal
+ * itself represents days far beyond it, so the edges are checked rather
+ * than relied on to fail.
+ */
+export function inDomain(day: Temporal.PlainDate): boolean {
+  return day.year >= 1 && day.year <= 9999;
+}
+
 /** The wall date the epoch second reads as on the document's clock. */
 export function wallDateOfSec(epochSeconds: number, timezone: string): Temporal.PlainDate {
   return Temporal.Instant.fromEpochMilliseconds(epochSeconds * 1000)
