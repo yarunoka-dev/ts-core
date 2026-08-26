@@ -53,7 +53,7 @@ export function parse(input: string | unknown, options?: YrnkParseOptions): Yrnk
   const bindings = collectBindings(options?.resolvers);
   const version = parseVersion(raw);
   const timezone = parseTimezone(raw);
-  const calendar = parseCalendar(raw.calendar);
+  const calendar = parseCalendar(raw.calendar, version);
   const schedules = parseSchedules(raw, timezone);
   const resolvers = parseResolverDeclarations(raw);
   const label = parseAnnotation(raw, 'label', labelProblem);

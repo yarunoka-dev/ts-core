@@ -103,6 +103,28 @@ describe('build', () => {
     assert.deepEqual(build(parse(doc)), doc);
   });
 
+  it('round-trips the authored empty objects of a 1.0 document', () => {
+    // A serializer keeps the declared spelling: 1.0 may write an empty
+    // calendar or date_sets, and round-tripping never rewrites it.
+    const empty = {
+      version: '1.0',
+      timezone: 'UTC',
+      calendar: {},
+      schedules: [{ allday: true }],
+    };
+
+    assert.deepEqual(build(parse(empty)), empty);
+
+    const nested = {
+      version: '1.0',
+      timezone: 'UTC',
+      calendar: { date_sets: {} },
+      schedules: [{ allday: true }],
+    };
+
+    assert.deepEqual(build(parse(nested)), nested);
+  });
+
   it('copies the input arrays instead of aliasing or freezing them', () => {
     const times = ['10:00'];
     const years = [2026];

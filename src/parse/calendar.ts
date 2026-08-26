@@ -17,9 +17,12 @@ const DAY_NAMES: readonly string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 
 
 /**
  * The definitions part. The top level is the closed set of reserved keys
- * (the built-in definitions); under date_sets is the open namespace.
+ * (the built-in definitions); under date_sets is the open namespace. An
+ * empty object is a spelling only 1.0 accepts (with the meaning of the
+ * omitted key), so the declared version decides between rejecting it and
+ * recording that it was authored — a serializer keeps the spelling.
  */
-export function parseCalendar(raw: unknown): YrnkCalendar {
+export function parseCalendar(raw: unknown, version: string): YrnkCalendar {
   if (raw === undefined) {
     return { dateSets: {} };
   }
@@ -30,6 +33,14 @@ export function parseCalendar(raw: unknown): YrnkCalendar {
 
   ensureKnownKeys(raw, KNOWN_KEYS, 'calendar');
 
+  if (Object.keys(raw).length === 0) {
+    if (version !== '1.0') {
+      invalid('calendar cannot be empty (a document with no definitions omits the key)');
+    }
+
+    return { dateSets: {}, authoredEmpty: true };
+  }
+
   const holidays = parseDateSetPosition(raw, 'holidays');
   const businessHolidays = parseDateSetPosition(raw, 'business_holidays');
   const businessDays = parseDateSetPosition(raw, 'business_days');
@@ -37,7 +48,27 @@ export function parseCalendar(raw: unknown): YrnkCalendar {
   const businessHours = Object.hasOwn(raw, 'business_hours')
     ? parseBusinessHours(raw.business_hours)
     : undefined;
-  const dateSets = Object.hasOwn(raw, 'date_sets') ? parseDateSets(raw.date_sets) : {};
+
+  let dateSets: Readonly<Record<string, readonly string[]>> = {};
+  let dateSetsAuthoredEmpty = false;
+
+  if (Object.hasOwn(raw, 'date_sets')) {
+    const value = raw.date_sets;
+
+    if (!isPlainObject(value)) {
+      invalid('date_sets must be an object of name to date list');
+    }
+
+    if (Object.keys(value).length === 0) {
+      if (version !== '1.0') {
+        invalid('date_sets cannot be empty (a calendar with no named sets omits the key)');
+      }
+
+      dateSetsAuthoredEmpty = true;
+    } else {
+      dateSets = parseDateSets(value);
+    }
+  }
 
   return {
     ...(holidays !== undefined ? { holidays } : {}),
@@ -46,6 +77,7 @@ export function parseCalendar(raw: unknown): YrnkCalendar {
     ...(workweek !== undefined ? { workweek } : {}),
     ...(businessHours !== undefined ? { businessHours } : {}),
     dateSets,
+    ...(dateSetsAuthoredEmpty ? { dateSetsAuthoredEmpty: true as const } : {}),
   };
 }
 
@@ -166,15 +198,11 @@ function parseBusinessHours(raw: unknown): readonly (readonly [string, string])[
 }
 
 /**
- * The open namespace. A value is a list of date literals and nothing
- * else: this is where the document holds the dates it names, so an entry
- * never stands for another name.
+ * The open namespace, already known to be a non-empty object. A value is
+ * a list of date literals and nothing else: this is where the document
+ * holds the dates it names, so an entry never stands for another name.
  */
-function parseDateSets(raw: unknown): Readonly<Record<string, readonly string[]>> {
-  if (!isPlainObject(raw)) {
-    invalid('date_sets must be an object of name to date list');
-  }
-
+function parseDateSets(raw: Record<string, unknown>): Readonly<Record<string, readonly string[]>> {
   const entries: [string, readonly string[]][] = [];
 
   for (const [name, value] of Object.entries(raw)) {
