@@ -8,7 +8,7 @@ import { hasMatchIn, matches, occurrencesIn, parse } from '../src/index.ts';
 
 function doc(schedule: Record<string, unknown>, calendar?: Record<string, unknown>) {
   return parse({
-    version: '1.0',
+    version: '1.1',
     timezone: 'Asia/Tokyo',
     ...(calendar ? { calendar } : {}),
     schedules: [schedule],

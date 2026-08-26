@@ -8,7 +8,7 @@ import type { YrnkSchedule } from '../src/index.ts';
 import { parse } from '../src/index.ts';
 
 const base = {
-  version: '1.0',
+  version: '1.1',
   timezone: 'Asia/Tokyo',
 };
 

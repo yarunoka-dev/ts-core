@@ -9,7 +9,7 @@ import { build, parse } from '../src/index.ts';
 describe('build', () => {
   it('round-trips a minimal document', () => {
     const doc = {
-      version: '1.0',
+      version: '1.1',
       timezone: 'Asia/Tokyo',
       schedules: [{ times: ['10:00'] }],
     };
@@ -21,7 +21,7 @@ describe('build', () => {
     const doc = {
       label: 'Company calendar',
       description: 'What this document is\nand a second line',
-      version: '1.0',
+      version: '1.1',
       timezone: 'Asia/Tokyo',
       resolvers: ['yasumi-jp', 'company-closures'],
       calendar: {
@@ -82,7 +82,7 @@ describe('build', () => {
   it('omits what the document omitted', () => {
     const built = build(
       parse({
-        version: '1.0',
+        version: '1.1',
         timezone: 'UTC',
         schedules: [{ allday: true }],
       }),
@@ -94,7 +94,7 @@ describe('build', () => {
 
   it('emits an empty written date list as a list, never dropping it', () => {
     const doc = {
-      version: '1.0',
+      version: '1.1',
       timezone: 'UTC',
       calendar: { holidays: [] },
       schedules: [{ days: ['holiday'], times: ['10:00'] }],
@@ -106,13 +106,13 @@ describe('build', () => {
   it('copies the input arrays instead of aliasing or freezing them', () => {
     const times = ['10:00'];
     const years = [2026];
-    const parsed = parse({ version: '1.0', timezone: 'UTC', schedules: [{ years, times }] });
+    const parsed = parse({ version: '1.1', timezone: 'UTC', schedules: [{ years, times }] });
 
     times.push('11:00');
     years.push(2027);
 
     assert.deepEqual(build(parsed), {
-      version: '1.0',
+      version: '1.1',
       timezone: 'UTC',
       schedules: [{ years: [2026], times: ['10:00'] }],
     });
@@ -120,7 +120,7 @@ describe('build', () => {
   });
 
   it('is JSON-stringifiable as the wire form', () => {
-    const doc = { version: '1.0', timezone: 'UTC', schedules: [{ times: ['10:00'] }] };
+    const doc = { version: '1.1', timezone: 'UTC', schedules: [{ times: ['10:00'] }] };
     const json = JSON.stringify(build(parse(doc)));
 
     assert.deepEqual(JSON.parse(json), doc);

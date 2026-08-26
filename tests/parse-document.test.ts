@@ -8,7 +8,7 @@ import { YrnkError } from '../src/error.ts';
 import { parse } from '../src/index.ts';
 
 const minimal = {
-  version: '1.0',
+  version: '1.1',
   timezone: 'Asia/Tokyo',
   schedules: [{ times: ['10:00'] }],
 };
@@ -33,7 +33,7 @@ describe('parse input forms', () => {
   it('parses a decoded object', () => {
     const doc = parse(minimal);
 
-    assert.equal(doc.version, '1.0');
+    assert.equal(doc.version, '1.1');
     assert.equal(doc.timezone, 'Asia/Tokyo');
     assert.deepEqual(doc.resolvers, []);
     assert.deepEqual(doc.calendar.dateSets, {});

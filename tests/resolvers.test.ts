@@ -7,7 +7,7 @@ import { describe, it } from 'node:test';
 import { ensureResolvable, matches, occurrencesIn, parse, YrnkError } from '../src/index.ts';
 
 const base = {
-  version: '1.0',
+  version: '1.1',
   timezone: 'Asia/Tokyo',
   resolvers: ['closures'],
   schedules: [{ days: ['closures'], allday: true }],
@@ -79,7 +79,7 @@ describe('resolver evaluation', () => {
     // own properties only, never the prototype chain.
     const d = parse(
       {
-        version: '1.0',
+        version: '1.1',
         timezone: 'Asia/Tokyo',
         resolvers: ['constructor'],
         calendar: { date_sets: { toString: ['2026-08-06'] } },
@@ -99,7 +99,7 @@ describe('resolver evaluation', () => {
   it('backs calendar definitions by name', () => {
     const d = parse(
       {
-        version: '1.0',
+        version: '1.1',
         timezone: 'Asia/Tokyo',
         resolvers: ['yasumi-jp'],
         calendar: { holidays: 'yasumi-jp' },

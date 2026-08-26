@@ -7,7 +7,7 @@ import { YrnkError } from '../src/error.ts';
 import { parse } from '../src/index.ts';
 
 const base = {
-  version: '1.0',
+  version: '1.1',
   timezone: 'Asia/Tokyo',
   schedules: [{ times: ['10:00'] }],
 };
@@ -184,7 +184,7 @@ describe('date_sets', () => {
     // Through JSON, as a real document arrives — a JS object literal
     // would itself send __proto__ to the prototype slot.
     const doc = parse(
-      '{"version":"1.0","timezone":"Asia/Tokyo","calendar":{"date_sets":{"__proto__":["2026-10-01"]}},"schedules":[{"days":["__proto__"],"allday":true}]}',
+      '{"version":"1.1","timezone":"Asia/Tokyo","calendar":{"date_sets":{"__proto__":["2026-10-01"]}},"schedules":[{"days":["__proto__"],"allday":true}]}',
     );
 
     assert.ok(Object.hasOwn(doc.calendar.dateSets, '__proto__'));
