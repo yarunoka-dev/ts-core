@@ -51,6 +51,15 @@ const response = handle(envelope);
 process.stdout.write(`${JSON.stringify(response)}\n`);
 
 function handle(env: Record<string, unknown>): Record<string, unknown> {
+  // The protocol delivers the document as a JSON string holding the
+  // document text, and it goes to parse as that string: decoding it here
+  // would collapse duplicate member names (and resolve escape spellings)
+  // before the implementation ever sees them. Anything else in the field
+  // is a request outside the protocol.
+  if (typeof env.document !== 'string') {
+    breakage('The request document must be a JSON string');
+  }
+
   let document: YrnkDocument;
 
   try {
@@ -103,7 +112,9 @@ function handle(env: Record<string, unknown>): Record<string, unknown> {
     }
   } catch (error) {
     if (error instanceof YrnkError) {
-      return { invalid: true };
+      // A reversed period or enumeration is the query's failure, not
+      // the document's — the protocol answers it as its own shape.
+      return error.code === 'malformed-query' ? { malformed: true } : { invalid: true };
     }
 
     throw error;
